@@ -53,8 +53,14 @@ export function AuthForm({ mode }: Props) {
         toast.success('ログインしました')
         router.push('/dashboard')
       } else {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
+        // When email confirmation is ON, Supabase hides duplicate errors for
+        // security. Duplicate signups return an empty identities array instead.
+        if (data.user?.identities?.length === 0) {
+          setFormError('このメールアドレスはすでに登録されています')
+          return
+        }
         toast.success('確認メールを送信しました。メールをご確認ください。')
       }
     } catch (err) {
