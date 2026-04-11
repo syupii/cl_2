@@ -1,0 +1,70 @@
+package api
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+
+	"github.com/syupii/cl_2/backend/internal/auth"
+	"github.com/syupii/cl_2/backend/internal/httpx"
+)
+
+// RouterConfig contains every external dependency the chi router needs.
+type RouterConfig struct {
+	Handler        *Handler
+	JWTVerifier    *auth.Verifier
+	AllowedOrigins []string
+}
+
+// NewRouter assembles the chi router with middleware, /healthz, Swagger UI,
+// and the authenticated /api/v1 routes.
+func NewRouter(cfg RouterConfig) http.Handler {
+	r := chi.NewRouter()
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(30 * time.Second))
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   cfg.AllowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Requested-With"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	// Public endpoints --------------------------------------------------------
+	r.Get("/healthz", healthz)
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+
+	// Authenticated API under /api/v1 -----------------------------------------
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(cfg.JWTVerifier.Middleware())
+
+		r.Get("/subscriptions", cfg.Handler.ListSubscriptions)
+		r.Post("/subscriptions", cfg.Handler.CreateSubscription)
+		r.Put("/subscriptions/{id}", cfg.Handler.UpdateSubscription)
+
+		r.Get("/templates", cfg.Handler.ListTemplates)
+
+		r.Get("/summary", cfg.Handler.GetSummary)
+	})
+
+	return r
+}
+
+// healthz is the unauthenticated liveness probe served at /healthz.
+// It is intentionally NOT documented by swag because the Swagger spec uses
+// basePath=/api/v1 while this endpoint lives at the server root.
+func healthz(w http.ResponseWriter, _ *http.Request) {
+	httpx.OK(w, http.StatusOK, HealthResponse{Status: "ok"})
+}

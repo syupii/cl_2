@@ -76,7 +76,7 @@ INSERT INTO public.user_subscriptions (
     payment_method,
     status
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, 'active')
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 RETURNING
     id,
@@ -104,11 +104,12 @@ type CreateUserSubscriptionParams struct {
 	NextBillingDate time.Time       `json:"next_billing_date"`
 	Category        pgtype.Text     `json:"category"`
 	PaymentMethod   pgtype.Text     `json:"payment_method"`
-	Column10        interface{}     `json:"column_10"`
+	Status          string          `json:"status"`
 }
 
 // Insert a new subscription. user_id is always set from the JWT claim, never
-// from the request body, so the INSERT policy's WITH CHECK passes.
+// from the request body, so the INSERT policy's WITH CHECK passes. The
+// handler is responsible for passing a valid status ('active' or 'cancelled').
 func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubscriptionParams) (UserSubscription, error) {
 	row := q.db.QueryRow(ctx, createUserSubscription,
 		arg.UserID,
@@ -120,7 +121,7 @@ func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubs
 		arg.NextBillingDate,
 		arg.Category,
 		arg.PaymentMethod,
-		arg.Column10,
+		arg.Status,
 	)
 	var i UserSubscription
 	err := row.Scan(

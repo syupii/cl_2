@@ -123,7 +123,8 @@ WHERE id = $1
 
 -- name: CreateUserSubscription :one
 -- Insert a new subscription. user_id is always set from the JWT claim, never
--- from the request body, so the INSERT policy's WITH CHECK passes.
+-- from the request body, so the INSERT policy's WITH CHECK passes. The
+-- handler is responsible for passing a valid status ('active' or 'cancelled').
 INSERT INTO public.user_subscriptions (
     user_id,
     service_name,
@@ -136,7 +137,7 @@ INSERT INTO public.user_subscriptions (
     payment_method,
     status
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, 'active')
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 RETURNING
     id,
