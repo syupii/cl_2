@@ -10,6 +10,7 @@ import { MonthlyBarChart } from '@/components/dashboard/MonthlyBarChart'
 import { SubscriptionTable } from '@/components/dashboard/SubscriptionTable'
 import { SubscriptionModal } from '@/components/dashboard/SubscriptionModal'
 import { PaymentMethodManager } from '@/components/dashboard/PaymentMethodManager'
+import { BillingAlerts } from '@/components/dashboard/BillingAlerts'
 
 export default function DashboardPage() {
   const [addOpen, setAddOpen] = useState(false)
@@ -32,6 +33,9 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* Billing alerts */}
+      <BillingAlerts />
 
       {/* KPI cards */}
       <SummaryCards />
