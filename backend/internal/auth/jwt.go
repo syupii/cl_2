@@ -3,14 +3,20 @@
 // request context so handlers and sqlc queries can scope every operation
 // to that user.
 //
-// Supabase issues HS256 access tokens signed with the project's JWT secret.
-// We verify with jwt/v5 and optionally validate the "iss" and "aud" claims.
+// Supabase issues JWTs signed with either HS256 (legacy projects) or ES256
+// (new projects using asymmetric keys). We auto-detect by fetching the JWKS
+// endpoint derived from SUPABASE_JWT_ISSUER at startup.
 package auth
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 
@@ -38,16 +44,12 @@ func WithUser(ctx context.Context, u User) context.Context {
 }
 
 // UserFromContext returns the user injected by the middleware.
-// The bool result is false when the middleware did not run, e.g. on public
-// routes like /healthz.
 func UserFromContext(ctx context.Context) (User, bool) {
 	u, ok := ctx.Value(userKey).(User)
 	return u, ok
 }
 
-// MustUserID is a convenience for handlers that already live behind the
-// middleware; it panics only if the middleware was mis-wired (programmer
-// error), which is fine because the recover middleware converts that to 500.
+// MustUserID is a convenience for handlers that already live behind the middleware.
 func MustUserID(ctx context.Context) uuid.UUID {
 	u, ok := UserFromContext(ctx)
 	if !ok {
@@ -58,25 +60,81 @@ func MustUserID(ctx context.Context) uuid.UUID {
 
 // Verifier encapsulates the configuration required to validate Supabase JWTs.
 type Verifier struct {
-	Secret   []byte
-	Issuer   string // optional
-	Audience string // expected aud claim, typically "authenticated"
+	Secret   []byte           // for HS256 (legacy Supabase)
+	ECKey    *ecdsa.PublicKey // for ES256 (new Supabase); nil if JWKS unavailable
+	Issuer   string
+	Audience string
+}
+
+// jwksResponse is the minimal shape of a JWKS JSON document.
+type jwksResponse struct {
+	Keys []struct {
+		Kty string `json:"kty"`
+		Crv string `json:"crv"`
+		X   string `json:"x"`
+		Y   string `json:"y"`
+	} `json:"keys"`
+}
+
+// fetchECKey retrieves the first EC P-256 public key from a JWKS endpoint.
+// Returns nil, nil when the endpoint has no EC keys (not an error).
+func fetchECKey(jwksURL string) (*ecdsa.PublicKey, error) {
+	resp, err := http.Get(jwksURL) //nolint:noctx
+	if err != nil {
+		return nil, fmt.Errorf("fetching JWKS: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var jwks jwksResponse
+	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
+		return nil, fmt.Errorf("decoding JWKS: %w", err)
+	}
+
+	for _, k := range jwks.Keys {
+		if k.Kty != "EC" || k.Crv != "P-256" {
+			continue
+		}
+		xBytes, err := base64.RawURLEncoding.DecodeString(k.X)
+		if err != nil {
+			continue
+		}
+		yBytes, err := base64.RawURLEncoding.DecodeString(k.Y)
+		if err != nil {
+			continue
+		}
+		return &ecdsa.PublicKey{
+			Curve: elliptic.P256(),
+			X:     new(big.Int).SetBytes(xBytes),
+			Y:     new(big.Int).SetBytes(yBytes),
+		}, nil
+	}
+	return nil, nil // no EC key present, HS256-only mode
 }
 
 // NewVerifier validates its inputs and returns a ready-to-use Verifier.
+// If issuer is set, it attempts to load ES256 public key via JWKS.
+// JWKS failure is non-fatal; the verifier falls back to HS256-only mode.
 func NewVerifier(secret, issuer, audience string) (*Verifier, error) {
 	if secret == "" {
 		return nil, errors.New("auth: JWT secret must not be empty")
 	}
-	return &Verifier{
+	v := &Verifier{
 		Secret:   []byte(secret),
 		Issuer:   strings.TrimSpace(issuer),
 		Audience: strings.TrimSpace(audience),
-	}, nil
+	}
+
+	// Attempt ES256 key fetch from JWKS (non-fatal).
+	if v.Issuer != "" {
+		jwksURL := strings.TrimRight(v.Issuer, "/") + "/.well-known/jwks.json"
+		if key, err := fetchECKey(jwksURL); err == nil && key != nil {
+			v.ECKey = key
+		}
+	}
+	return v, nil
 }
 
-// supabaseClaims is the JWT payload shape Supabase emits for authenticated
-// users. We only read the fields the API cares about.
+// supabaseClaims is the JWT payload shape Supabase emits for authenticated users.
 type supabaseClaims struct {
 	Email string `json:"email,omitempty"`
 	Role  string `json:"role,omitempty"`
@@ -108,12 +166,27 @@ func (v *Verifier) Middleware() func(http.Handler) http.Handler {
 
 // verify parses and validates the token, returning the domain User.
 func (v *Verifier) verify(raw string) (User, error) {
+	validMethods := []string{"HS256"}
+	if v.ECKey != nil {
+		validMethods = append(validMethods, "ES256")
+	}
+
 	parser := jwt.NewParser(
-		jwt.WithValidMethods([]string{"HS256"}),
+		jwt.WithValidMethods(validMethods),
 	)
 
 	token, err := parser.ParseWithClaims(raw, &supabaseClaims{}, func(t *jwt.Token) (any, error) {
-		return v.Secret, nil
+		switch t.Method.Alg() {
+		case "HS256":
+			return v.Secret, nil
+		case "ES256":
+			if v.ECKey == nil {
+				return nil, errors.New("ES256 key not available")
+			}
+			return v.ECKey, nil
+		default:
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Method.Alg())
+		}
 	})
 	if err != nil {
 		return User{}, fmt.Errorf("invalid token: %w", err)
