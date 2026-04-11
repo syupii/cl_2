@@ -57,6 +57,10 @@ func NewRouter(cfg RouterConfig) http.Handler {
 		r.Get("/templates", cfg.Handler.ListTemplates)
 
 		r.Get("/summary", cfg.Handler.GetSummary)
+
+		r.Get("/payment-methods", cfg.Handler.ListPaymentMethods)
+		r.Post("/payment-methods", cfg.Handler.CreatePaymentMethod)
+		r.Delete("/payment-methods/{id}", cfg.Handler.DeletePaymentMethod)
 	})
 
 	return r
