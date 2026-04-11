@@ -81,3 +81,19 @@ export function fetchTemplates(): Promise<{ templates: TemplateDTO[] }> {
 export function fetchSummary(): Promise<SummaryResponse> {
   return request('GET', '/summary')
 }
+
+// ── Payment Methods ───────────────────────────────────────────────────────────
+
+export interface PaymentMethodDTO { id: string; name: string }
+
+export function fetchPaymentMethods(): Promise<{ payment_methods: PaymentMethodDTO[] }> {
+  return request('GET', '/payment-methods')
+}
+
+export function createPaymentMethod(name: string): Promise<PaymentMethodDTO> {
+  return request('POST', '/payment-methods', { name })
+}
+
+export function deletePaymentMethod(id: string): Promise<void> {
+  return request('DELETE', `/payment-methods/${id}`)
+}

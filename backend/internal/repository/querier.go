@@ -11,6 +11,10 @@ import (
 )
 
 type Querier interface {
+	// Payment methods CRUD.
+	ListPaymentMethods(ctx context.Context, userID uuid.UUID) ([]PaymentMethod, error)
+	CreatePaymentMethod(ctx context.Context, userID uuid.UUID, name string) (PaymentMethod, error)
+	DeletePaymentMethod(ctx context.Context, id, userID uuid.UUID) error
 	// Convenience mutation for the "cancel" action in the UI. Equivalent to
 	// UpdateUserSubscription with status='cancelled', but cheaper for the client.
 	CancelUserSubscription(ctx context.Context, arg CancelUserSubscriptionParams) (UserSubscription, error)

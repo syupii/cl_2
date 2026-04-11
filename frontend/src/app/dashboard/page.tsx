@@ -9,6 +9,8 @@ import { CategoryPieChart } from '@/components/dashboard/CategoryPieChart'
 import { MonthlyBarChart } from '@/components/dashboard/MonthlyBarChart'
 import { SubscriptionTable } from '@/components/dashboard/SubscriptionTable'
 import { SubscriptionModal } from '@/components/dashboard/SubscriptionModal'
+import { PaymentMethodManager } from '@/components/dashboard/PaymentMethodManager'
+import { BillingAlerts } from '@/components/dashboard/BillingAlerts'
 
 export default function DashboardPage() {
   const [addOpen, setAddOpen] = useState(false)
@@ -23,11 +25,17 @@ export default function DashboardPage() {
             登録済みサブスクリプションの概要
           </p>
         </div>
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus className="mr-1 h-4 w-4" />
-          サービスを追加
-        </Button>
+        <div className="flex items-center gap-2">
+          <PaymentMethodManager />
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            サービスを追加
+          </Button>
+        </div>
       </div>
+
+      {/* Billing alerts */}
+      <BillingAlerts />
 
       {/* KPI cards */}
       <SummaryCards />

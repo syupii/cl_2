@@ -24,8 +24,9 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { useCreateSubscription, useUpdateSubscription } from '@/hooks/useSubscriptions'
+import { useCreateSubscription, useUpdateSubscription, useSubscriptions } from '@/hooks/useSubscriptions'
 import { useTemplates } from '@/hooks/useTemplates'
+import { usePaymentMethods } from '@/hooks/usePaymentMethods'
 import type { SubscriptionDTO, PlanDTO, TemplateDTO } from '@/lib/api-client'
 
 // ── Zod schema ─────────────────────────────────────────────────────────────
@@ -62,7 +63,22 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   const [step, setStep] = useState<Step>(editData ? 'form' : 'template-select')
 
   const { data: templates = [] } = useTemplates()
+  const { data: existingSubs = [] } = useSubscriptions()
   const createMutation = useCreateSubscription()
+
+  const { data: dbPaymentMethods = [] } = usePaymentMethods()
+
+  // DB登録済み + 過去入力履歴をマージして候補リストを生成
+  const paymentMethodsFromHistory = [...new Set(
+    existingSubs.map((s) => s.payment_method).filter((v): v is string => !!v)
+  )]
+  const paymentMethods = [...new Set([
+    ...dbPaymentMethods.map((m) => m.name),
+    ...paymentMethodsFromHistory,
+  ])]
+  const categories = [...new Set(
+    existingSubs.map((s) => s.category).filter((v): v is string => !!v)
+  )]
   const updateMutation = useUpdateSubscription()
   const isSubmitting = createMutation.isPending || updateMutation.isPending
 
@@ -336,7 +352,11 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
                 id="category"
                 {...register('category')}
                 placeholder="Entertainment, Music, Software…"
+                list="category-list"
               />
+              <datalist id="category-list">
+                {categories.map((c) => <option key={c} value={c} />)}
+              </datalist>
             </div>
 
             {/* 決済手段 */}
@@ -346,7 +366,11 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
                 id="payment_method"
                 {...register('payment_method')}
                 placeholder="Visa ****1234"
+                list="payment-method-list"
               />
+              <datalist id="payment-method-list">
+                {paymentMethods.map((p) => <option key={p} value={p} />)}
+              </datalist>
             </div>
 
             {/* ステータス（編集時のみ） */}

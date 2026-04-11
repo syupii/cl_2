@@ -35,6 +35,14 @@ type ServiceTemplate struct {
 	CreatedAt time.Time   `json:"created_at"`
 }
 
+// Payment method registered by a user (credit card, bank account, etc.).
+type PaymentMethod struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // Individual subscriptions owned by a Supabase auth user.
 type UserSubscription struct {
 	ID uuid.UUID `json:"id"`
