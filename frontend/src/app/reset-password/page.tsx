@@ -18,25 +18,26 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // PKCE flow: Supabase redirects with ?code=XXXX in the URL
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          setError('リンクが無効か期限切れです。もう一度パスワードリセットをお試しください。')
-        } else {
-          setReady(true)
-        }
-      })
-      return
-    }
-
-    // Implicit flow fallback: token comes as URL hash (#access_token=...&type=recovery)
+    // detectSessionInUrl: true automatically exchanges the ?code= from the URL.
+    // We must NOT call exchangeCodeForSession manually — just listen for the event.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true)
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+        setReady(true)
+      }
     })
+
+    // Race-condition fallback: if the event already fired before the listener
+    // was attached, check whether a session exists now.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setReady(true)
+      } else if (!window.location.search.includes('code=')) {
+        // No code in URL and no session → link is invalid/expired
+        setError('リンクが無効か期限切れです。もう一度パスワードリセットをお試しください。')
+      }
+      // If code IS in the URL, Supabase is still processing it → wait for the event above
+    })
+
     return () => subscription.unsubscribe()
   }, [])
 
@@ -63,7 +64,6 @@ export default function ResetPasswordPage() {
     }
   }
 
-  // Invalid / expired link
   if (error) {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
@@ -82,7 +82,6 @@ export default function ResetPasswordPage() {
     )
   }
 
-  // Waiting for token exchange
   if (!ready) {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
