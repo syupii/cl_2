@@ -15,14 +15,27 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Supabase sends the recovery token in the URL hash.
-  // The client library picks it up automatically and emits PASSWORD_RECOVERY.
   useEffect(() => {
+    // PKCE flow: Supabase redirects with ?code=XXXX in the URL
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          setError('リンクが無効か期限切れです。もう一度パスワードリセットをお試しください。')
+        } else {
+          setReady(true)
+        }
+      })
+      return
+    }
+
+    // Implicit flow fallback: token comes as URL hash (#access_token=...&type=recovery)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setReady(true)
-      }
+      if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -50,6 +63,26 @@ export default function ResetPasswordPage() {
     }
   }
 
+  // Invalid / expired link
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-sm">
+          <CardContent className="py-8 space-y-4">
+            <p className="text-sm text-destructive text-center">{error}</p>
+            <a
+              href="/forgot-password"
+              className="block text-center text-sm underline underline-offset-2 text-muted-foreground hover:text-foreground"
+            >
+              パスワードリセットをやり直す
+            </a>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  // Waiting for token exchange
   if (!ready) {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
