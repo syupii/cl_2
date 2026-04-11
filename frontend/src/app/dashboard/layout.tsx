@@ -1,19 +1,24 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { LogOut, LayoutDashboard } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation'
+import { LogOut, LayoutDashboard, CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
+const NAV = [
+  { href: '/dashboard', label: 'ダッシュボード', Icon: LayoutDashboard },
+  { href: '/dashboard/calendar', label: 'カレンダー', Icon: CalendarDays },
+]
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { session, loading } = useAuth()
 
-  // Redirect to login if no session once initial load is done.
   useEffect(() => {
     if (!loading && !session) {
       router.replace('/login')
@@ -26,7 +31,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/login')
   }
 
-  // Show a loading screen while session state is being determined.
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -35,7 +39,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  // Don't flash the dashboard while we redirect unauthenticated users.
   if (!session) return null
 
   return (
@@ -43,9 +46,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Topbar */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-6">
             <span className="font-semibold">サブスク管理</span>
+            <nav className="flex items-center gap-1">
+              {NAV.map(({ href, label, Icon }) => {
+                const active = pathname === href
+                return (
+                  <a
+                    key={href}
+                    href={href}
+                    className={[
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
+                      active
+                        ? 'bg-accent font-medium text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    ].join(' ')}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </a>
+                )
+              })}
+            </nav>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:block">

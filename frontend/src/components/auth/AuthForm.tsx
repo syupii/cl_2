@@ -87,6 +87,16 @@ export function AuthForm({ mode }: Props) {
               ? 'ログイン'
               : 'アカウントを作成'}
           </Button>
+          {mode === 'login' && (
+            <div className="text-right">
+              <a
+                href="/forgot-password"
+                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                パスワードを忘れた方はこちら
+              </a>
+            </div>
+          )}
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           {mode === 'login' ? 'アカウントをお持ちでない方は' : 'すでにアカウントをお持ちの方は'}
