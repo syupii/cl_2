@@ -1,0 +1,42 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "db/query.sql"
+    schema: "db/schema.sql"
+    gen:
+      go:
+        package: "repository"
+        out: "internal/repository"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: true
+        emit_exact_table_names: false
+        emit_empty_slices: true
+        emit_pointers_for_null_types: false
+        overrides:
+          # UUID -> google/uuid.UUID so handlers can construct values with
+          # uuid.Parse / uuid.New directly without wrapping in pgtype.UUID.
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          # NUMERIC -> shopspring/decimal.Decimal for precise arithmetic
+          # (year->month division, currency conversion, summing totals).
+          - db_type: "pg_catalog.numeric"
+            go_type:
+              import: "github.com/shopspring/decimal"
+              type: "Decimal"
+          - db_type: "pg_catalog.numeric"
+            nullable: true
+            go_type:
+              import: "github.com/shopspring/decimal"
+              type: "NullDecimal"
+          # TIMESTAMPTZ -> time.Time so handlers and JSON layers can work
+          # with stdlib types directly.
+          - db_type: "timestamptz"
+            go_type: "time.Time"
+          # DATE -> time.Time for the same reason (next_billing_date, summary
+          # bucket start).
+          - db_type: "date"
+            go_type: "time.Time"
