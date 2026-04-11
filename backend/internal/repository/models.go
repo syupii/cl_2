@@ -58,6 +58,7 @@ type UserSubscription struct {
 	NextBillingDate time.Time   `json:"next_billing_date"`
 	Category        pgtype.Text `json:"category"`
 	PaymentMethod   pgtype.Text `json:"payment_method"`
+	Notes           pgtype.Text `json:"notes"`
 	// Soft-deletion flag. "active" or "cancelled". We never DELETE rows.
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`

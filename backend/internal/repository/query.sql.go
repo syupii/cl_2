@@ -30,6 +30,7 @@ RETURNING
     next_billing_date,
     category,
     payment_method,
+    notes,
     status,
     created_at,
     updated_at
@@ -56,6 +57,7 @@ func (q *Queries) CancelUserSubscription(ctx context.Context, arg CancelUserSubs
 		&i.NextBillingDate,
 		&i.Category,
 		&i.PaymentMethod,
+		&i.Notes,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -74,9 +76,10 @@ INSERT INTO public.user_subscriptions (
     next_billing_date,
     category,
     payment_method,
+    notes,
     status
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 RETURNING
     id,
@@ -89,6 +92,7 @@ RETURNING
     next_billing_date,
     category,
     payment_method,
+    notes,
     status,
     created_at,
     updated_at
@@ -104,6 +108,7 @@ type CreateUserSubscriptionParams struct {
 	NextBillingDate time.Time       `json:"next_billing_date"`
 	Category        pgtype.Text     `json:"category"`
 	PaymentMethod   pgtype.Text     `json:"payment_method"`
+	Notes           pgtype.Text     `json:"notes"`
 	Status          string          `json:"status"`
 }
 
@@ -121,6 +126,7 @@ func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubs
 		arg.NextBillingDate,
 		arg.Category,
 		arg.PaymentMethod,
+		arg.Notes,
 		arg.Status,
 	)
 	var i UserSubscription
@@ -135,6 +141,7 @@ func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubs
 		&i.NextBillingDate,
 		&i.Category,
 		&i.PaymentMethod,
+		&i.Notes,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -154,6 +161,7 @@ SELECT
     next_billing_date,
     category,
     payment_method,
+    notes,
     status,
     created_at,
     updated_at
@@ -182,6 +190,7 @@ func (q *Queries) GetUserSubscription(ctx context.Context, arg GetUserSubscripti
 		&i.NextBillingDate,
 		&i.Category,
 		&i.PaymentMethod,
+		&i.Notes,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -201,6 +210,7 @@ SELECT
     next_billing_date,
     category,
     payment_method,
+    notes,
     status,
     created_at,
     updated_at
@@ -231,6 +241,7 @@ func (q *Queries) ListActiveUserSubscriptions(ctx context.Context, userID uuid.U
 			&i.NextBillingDate,
 			&i.Category,
 			&i.PaymentMethod,
+			&i.Notes,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -400,6 +411,7 @@ SELECT
     next_billing_date,
     category,
     payment_method,
+    notes,
     status,
     created_at,
     updated_at
@@ -433,6 +445,7 @@ func (q *Queries) ListUserSubscriptions(ctx context.Context, userID uuid.UUID) (
 			&i.NextBillingDate,
 			&i.Category,
 			&i.PaymentMethod,
+			&i.Notes,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -572,7 +585,8 @@ SET
     next_billing_date = $8,
     category          = $9,
     payment_method    = $10,
-    status            = $11
+    notes             = $11,
+    status            = $12
 WHERE id = $1
   AND user_id = $2
 RETURNING
@@ -586,6 +600,7 @@ RETURNING
     next_billing_date,
     category,
     payment_method,
+    notes,
     status,
     created_at,
     updated_at
@@ -602,6 +617,7 @@ type UpdateUserSubscriptionParams struct {
 	NextBillingDate time.Time       `json:"next_billing_date"`
 	Category        pgtype.Text     `json:"category"`
 	PaymentMethod   pgtype.Text     `json:"payment_method"`
+	Notes           pgtype.Text     `json:"notes"`
 	Status          string          `json:"status"`
 }
 
@@ -619,6 +635,7 @@ func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubs
 		arg.NextBillingDate,
 		arg.Category,
 		arg.PaymentMethod,
+		arg.Notes,
 		arg.Status,
 	)
 	var i UserSubscription
@@ -633,6 +650,7 @@ func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubs
 		&i.NextBillingDate,
 		&i.Category,
 		&i.PaymentMethod,
+		&i.Notes,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,

@@ -26,6 +26,7 @@ type SubscriptionDTO struct {
 	NextBillingDate string  `json:"next_billing_date"  example:"2026-05-01"`
 	Category        *string `json:"category"           example:"Entertainment"`
 	PaymentMethod   *string `json:"payment_method"     example:"Visa ****1234"`
+	Notes           *string `json:"notes"              example:"家族プラン"`
 	Status          string  `json:"status"             example:"active" enums:"active,cancelled"`
 	CreatedAt       string  `json:"created_at"         example:"2026-04-01T10:00:00Z"`
 	UpdatedAt       string  `json:"updated_at"         example:"2026-04-01T10:00:00Z"`
@@ -52,6 +53,7 @@ type CreateSubscriptionRequest struct {
 	NextBillingDate string  `json:"next_billing_date"  example:"2026-05-01"`
 	Category        *string `json:"category"           example:"Entertainment"`
 	PaymentMethod   *string `json:"payment_method"     example:"Visa ****1234"`
+	Notes           *string `json:"notes"              example:"家族プラン"`
 }
 
 // UpdateSubscriptionRequest is the PUT /subscriptions/{id} body.
@@ -66,6 +68,7 @@ type UpdateSubscriptionRequest struct {
 	NextBillingDate string  `json:"next_billing_date"  example:"2026-05-01"`
 	Category        *string `json:"category"           example:"Entertainment"`
 	PaymentMethod   *string `json:"payment_method"     example:"Visa ****1234"`
+	Notes           *string `json:"notes"              example:"家族プラン"`
 	Status          string  `json:"status"             example:"active" enums:"active,cancelled"`
 }
 
