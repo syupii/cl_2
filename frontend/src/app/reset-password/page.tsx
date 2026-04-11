@@ -18,27 +18,42 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // detectSessionInUrl: true automatically exchanges the ?code= from the URL.
-    // We must NOT call exchangeCodeForSession manually — just listen for the event.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-        setReady(true)
-      }
-    })
+    async function init() {
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
 
-    // Race-condition fallback: if the event already fired before the listener
-    // was attached, check whether a session exists now.
-    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (code) {
+        // Try to exchange the code for a session
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+        if (exchangeError) {
+          // Code may already have been consumed by detectSessionInUrl.
+          // Check if a session exists anyway.
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            setReady(true)
+          } else {
+            setError('リンクが無効か期限切れです。もう一度パスワードリセットをお試しください。')
+          }
+          return
+        }
+
+        if (data.session) {
+          setReady(true)
+          return
+        }
+      }
+
+      // No code in URL — check for an existing session (hash-based flow or already exchanged)
+      const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         setReady(true)
-      } else if (!window.location.search.includes('code=')) {
-        // No code in URL and no session → link is invalid/expired
+      } else {
         setError('リンクが無効か期限切れです。もう一度パスワードリセットをお試しください。')
       }
-      // If code IS in the URL, Supabase is still processing it → wait for the event above
-    })
+    }
 
-    return () => subscription.unsubscribe()
+    init()
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
