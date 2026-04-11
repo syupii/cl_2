@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,61 +43,62 @@ export function PaymentMethodManager() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1">
-          <CreditCard className="h-3.5 w-3.5" />
-          決済手段を管理
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>決済手段の管理</DialogTitle>
-        </DialogHeader>
+    <>
+      <Button variant="outline" size="sm" className="gap-1" onClick={() => setOpen(true)}>
+        <CreditCard className="h-3.5 w-3.5" />
+        決済手段を管理
+      </Button>
 
-        {/* 新規追加 */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="例: Visa ****1234"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
-          />
-          <Button
-            size="icon"
-            onClick={handleCreate}
-            disabled={!newName.trim() || createMutation.isPending}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>決済手段の管理</DialogTitle>
+          </DialogHeader>
 
-        {/* 一覧 */}
-        <div className="space-y-1 max-h-64 overflow-y-auto">
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground text-center py-4">読み込み中…</p>
-          ) : methods.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              決済手段が登録されていません
-            </p>
-          ) : (
-            methods.map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                <span className="text-sm">{m.name}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(m.id, m.name)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+          {/* 新規追加 */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="例: Visa ****1234"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+            />
+            <Button
+              size="icon"
+              onClick={handleCreate}
+              disabled={!newName.trim() || createMutation.isPending}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* 一覧 */}
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-4">読み込み中…</p>
+            ) : methods.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                決済手段が登録されていません
+              </p>
+            ) : (
+              methods.map((m) => (
+                <div key={m.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                  <span className="text-sm">{m.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(m.id, m.name)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
