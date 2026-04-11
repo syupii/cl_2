@@ -1,0 +1,16 @@
+# Railway service configuration for the Go backend.
+# Docs: https://docs.railway.app/reference/config-as-code
+
+[build]
+# Use the Dockerfile in this directory.
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Railway sets $PORT automatically; the app reads it via os.Getenv("PORT").
+# healthcheckPath is the liveness probe Railway pings after each deploy.
+healthcheckPath = "/healthz"
+healthcheckTimeout = 30
+
+# Restart the container up to 3 times on crash before marking the deploy failed.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
