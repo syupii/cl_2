@@ -1,0 +1,620 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Unified subscription management dashboard API.\nAll /api/v1 endpoints require a Supabase JWT\nin the Authorization header.",
+        "title": "Subscription Dashboard API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/subscriptions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns every subscription owned by the caller, including\ncancelled ones, together with the effective monthly JPY cost\ncomputed by the backend.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "List subscriptions for the authenticated user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api.ListSubscriptionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a subscription owned by the authenticated user.\nThe user_id is taken from the JWT, never from the body.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Register a new subscription",
+                "parameters": [
+                    {
+                        "description": "subscription",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CreateSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api.SubscriptionDTO"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Full replacement update. Set status=\"cancelled\" to soft-delete.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Update an existing subscription (including cancellation)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "subscription id (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "subscription",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api.SubscriptionDTO"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the effective monthly spend in JPY, a breakdown by\ncategory for the pie chart, and a monthly trend for the\nbar chart. All computations happen in Go with the fixed\nFX rates configured on the backend.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "summary"
+                ],
+                "summary": "Dashboard summary with JPY totals and charts data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api.SummaryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/templates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all pre-defined service templates (Netflix, Spotify,\netc.) with their plans nested inside. Consumed by the\n\"register from template\" modal on the frontend.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "List subscription templates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api.ListTemplatesResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_syupii_cl_2_backend_internal_httpx.Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_api.CategoryBreakdown": {
+            "type": "object",
+            "properties": {
+                "amount_jpy": {
+                    "type": "string",
+                    "example": "5290"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "Entertainment"
+                },
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "internal_api.CreateSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "billing_cycle": {
+                    "type": "string",
+                    "enum": [
+                        "monthly",
+                        "yearly"
+                    ],
+                    "example": "monthly"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "Entertainment"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "JPY"
+                },
+                "next_billing_date": {
+                    "type": "string",
+                    "example": "2026-05-01"
+                },
+                "payment_method": {
+                    "type": "string",
+                    "example": "Visa ****1234"
+                },
+                "plan_name": {
+                    "type": "string",
+                    "example": "Premium"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "2290"
+                },
+                "service_name": {
+                    "type": "string",
+                    "example": "Netflix"
+                }
+            }
+        },
+        "internal_api.ListSubscriptionsResponse": {
+            "type": "object",
+            "properties": {
+                "subscriptions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.SubscriptionDTO"
+                    }
+                }
+            }
+        },
+        "internal_api.ListTemplatesResponse": {
+            "type": "object",
+            "properties": {
+                "templates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.TemplateDTO"
+                    }
+                }
+            }
+        },
+        "internal_api.MonthlyTrendPoint": {
+            "type": "object",
+            "properties": {
+                "amount_jpy": {
+                    "type": "string",
+                    "example": "7680"
+                },
+                "month": {
+                    "type": "string",
+                    "example": "2026-04"
+                }
+            }
+        },
+        "internal_api.PlanDTO": {
+            "type": "object",
+            "properties": {
+                "billing_cycle": {
+                    "type": "string",
+                    "enum": [
+                        "monthly",
+                        "yearly"
+                    ],
+                    "example": "monthly"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "JPY"
+                },
+                "default_price": {
+                    "type": "string",
+                    "example": "2290"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5f0b34c0-0ccd-4b9b-9b29-77a6c61b0123"
+                },
+                "plan_name": {
+                    "type": "string",
+                    "example": "Premium"
+                }
+            }
+        },
+        "internal_api.SubscriptionDTO": {
+            "type": "object",
+            "properties": {
+                "billing_cycle": {
+                    "type": "string",
+                    "enum": [
+                        "monthly",
+                        "yearly"
+                    ],
+                    "example": "monthly"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "Entertainment"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-04-01T10:00:00Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "JPY"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3d49e7a3-4a2a-4b8e-9f3b-6f3b0d8e9c1a"
+                },
+                "monthly_cost_jpy": {
+                    "description": "MonthlyCostJPY is the effective monthly burden after converting to JPY\nand dividing yearly prices by 12. Frontend can sum these safely.",
+                    "type": "string",
+                    "example": "2290"
+                },
+                "next_billing_date": {
+                    "type": "string",
+                    "example": "2026-05-01"
+                },
+                "payment_method": {
+                    "type": "string",
+                    "example": "Visa ****1234"
+                },
+                "plan_name": {
+                    "type": "string",
+                    "example": "Premium"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "2290"
+                },
+                "service_name": {
+                    "type": "string",
+                    "example": "Netflix"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "cancelled"
+                    ],
+                    "example": "active"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-04-01T10:00:00Z"
+                }
+            }
+        },
+        "internal_api.SummaryResponse": {
+            "type": "object",
+            "properties": {
+                "active_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "category_breakdown": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.CategoryBreakdown"
+                    }
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "JPY"
+                },
+                "monthly_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.MonthlyTrendPoint"
+                    }
+                },
+                "total_monthly_jpy": {
+                    "type": "string",
+                    "example": "7680"
+                }
+            }
+        },
+        "internal_api.TemplateDTO": {
+            "type": "object",
+            "properties": {
+                "icon_url": {
+                    "type": "string",
+                    "example": "https://example.com/netflix.png"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "26c8c2b0-4e6c-42c5-9a55-cfb0d4f6eb44"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Netflix"
+                },
+                "plans": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.PlanDTO"
+                    }
+                }
+            }
+        },
+        "internal_api.UpdateSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "billing_cycle": {
+                    "type": "string",
+                    "enum": [
+                        "monthly",
+                        "yearly"
+                    ],
+                    "example": "monthly"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "Entertainment"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "JPY"
+                },
+                "next_billing_date": {
+                    "type": "string",
+                    "example": "2026-05-01"
+                },
+                "payment_method": {
+                    "type": "string",
+                    "example": "Visa ****1234"
+                },
+                "plan_name": {
+                    "type": "string",
+                    "example": "Premium"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "2290"
+                },
+                "service_name": {
+                    "type": "string",
+                    "example": "Netflix"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "cancelled"
+                    ],
+                    "example": "active"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

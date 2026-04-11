@@ -1,55 +1,118 @@
-// Package main is the HTTP API entrypoint for the subscription dashboard backend.
+// Package main is the HTTP API entrypoint for the subscription dashboard.
 //
-// This file in Step 1 is intentionally a minimal skeleton that only wires up
-// the chi router, middleware, and CORS. Database access, Supabase JWT auth,
-// and the actual /api/v1 endpoints are implemented in later steps.
+// It loads configuration from the environment, opens a pgx connection pool
+// to Supabase Postgres, constructs the sqlc repository, wires the chi router
+// with Supabase JWT middleware, and serves the API on the configured port.
+//
+// @title                       Subscription Dashboard API
+// @version                     1.0
+// @description                 Unified subscription management dashboard API.
+// @description                 All /api/v1 endpoints require a Supabase JWT
+// @description                 in the Authorization header.
+// @BasePath                    /api/v1
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	// Blank import so swag-generated docs are registered with http-swagger.
+	_ "github.com/syupii/cl_2/backend/docs"
+
+	"github.com/syupii/cl_2/backend/internal/api"
+	"github.com/syupii/cl_2/backend/internal/auth"
+	"github.com/syupii/cl_2/backend/internal/config"
+	"github.com/syupii/cl_2/backend/internal/money"
+	"github.com/syupii/cl_2/backend/internal/repository"
 )
 
 func main() {
-	r := chi.NewRouter()
+	if err := run(); err != nil {
+		log.Fatalf("fatal: %v", err)
+	}
+}
 
-	// Standard middleware stack.
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(30 * time.Second))
+func run() error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
 
-	// CORS: allow the Next.js dev server to call the API with JWT.
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	// Connection pool. The background context lives for the life of the
+	// process; individual requests use their own request-scoped context.
+	poolCtx, poolCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer poolCancel()
 
-	// Liveness probe. Real endpoints are added in Step 3.
-	r.Get("/healthz", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"success":true,"data":{"status":"ok"},"error":""}`))
+	pool, err := pgxpool.New(poolCtx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	if err := pool.Ping(poolCtx); err != nil {
+		return err
+	}
+
+	repo := repository.New(pool)
+	conv := money.NewConverter(cfg.FXRates)
+
+	verifier, err := auth.NewVerifier(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTAudience)
+	if err != nil {
+		return err
+	}
+
+	handler := api.NewHandler(repo, conv)
+	router := api.NewRouter(api.RouterConfig{
+		Handler:        handler,
+		JWTVerifier:    verifier,
+		AllowedOrigins: cfg.AllowedOrigins,
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	server := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
-	addr := ":" + port
 
-	log.Printf("backend listening on %s", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatalf("server error: %v", err)
+	// Graceful shutdown on SIGINT / SIGTERM.
+	errCh := make(chan error, 1)
+	go func() {
+		log.Printf("backend listening on %s", server.Addr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+			return
+		}
+		errCh <- nil
+	}()
+
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-errCh:
+		return err
+	case sig := <-signalCh:
+		log.Printf("received %s, shutting down", sig)
 	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return err
+	}
+	return <-errCh
 }

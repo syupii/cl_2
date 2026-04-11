@@ -1,0 +1,422 @@
+basePath: /api/v1
+definitions:
+  github_com_syupii_cl_2_backend_internal_httpx.Response:
+    properties:
+      data: {}
+      error:
+        example: ""
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_api.CategoryBreakdown:
+    properties:
+      amount_jpy:
+        example: "5290"
+        type: string
+      category:
+        example: Entertainment
+        type: string
+      count:
+        example: 3
+        type: integer
+    type: object
+  internal_api.CreateSubscriptionRequest:
+    properties:
+      billing_cycle:
+        enum:
+        - monthly
+        - yearly
+        example: monthly
+        type: string
+      category:
+        example: Entertainment
+        type: string
+      currency:
+        example: JPY
+        type: string
+      next_billing_date:
+        example: "2026-05-01"
+        type: string
+      payment_method:
+        example: Visa ****1234
+        type: string
+      plan_name:
+        example: Premium
+        type: string
+      price:
+        example: "2290"
+        type: string
+      service_name:
+        example: Netflix
+        type: string
+    type: object
+  internal_api.ListSubscriptionsResponse:
+    properties:
+      subscriptions:
+        items:
+          $ref: '#/definitions/internal_api.SubscriptionDTO'
+        type: array
+    type: object
+  internal_api.ListTemplatesResponse:
+    properties:
+      templates:
+        items:
+          $ref: '#/definitions/internal_api.TemplateDTO'
+        type: array
+    type: object
+  internal_api.MonthlyTrendPoint:
+    properties:
+      amount_jpy:
+        example: "7680"
+        type: string
+      month:
+        example: 2026-04
+        type: string
+    type: object
+  internal_api.PlanDTO:
+    properties:
+      billing_cycle:
+        enum:
+        - monthly
+        - yearly
+        example: monthly
+        type: string
+      currency:
+        example: JPY
+        type: string
+      default_price:
+        example: "2290"
+        type: string
+      id:
+        example: 5f0b34c0-0ccd-4b9b-9b29-77a6c61b0123
+        type: string
+      plan_name:
+        example: Premium
+        type: string
+    type: object
+  internal_api.SubscriptionDTO:
+    properties:
+      billing_cycle:
+        enum:
+        - monthly
+        - yearly
+        example: monthly
+        type: string
+      category:
+        example: Entertainment
+        type: string
+      created_at:
+        example: "2026-04-01T10:00:00Z"
+        type: string
+      currency:
+        example: JPY
+        type: string
+      id:
+        example: 3d49e7a3-4a2a-4b8e-9f3b-6f3b0d8e9c1a
+        type: string
+      monthly_cost_jpy:
+        description: |-
+          MonthlyCostJPY is the effective monthly burden after converting to JPY
+          and dividing yearly prices by 12. Frontend can sum these safely.
+        example: "2290"
+        type: string
+      next_billing_date:
+        example: "2026-05-01"
+        type: string
+      payment_method:
+        example: Visa ****1234
+        type: string
+      plan_name:
+        example: Premium
+        type: string
+      price:
+        example: "2290"
+        type: string
+      service_name:
+        example: Netflix
+        type: string
+      status:
+        enum:
+        - active
+        - cancelled
+        example: active
+        type: string
+      updated_at:
+        example: "2026-04-01T10:00:00Z"
+        type: string
+    type: object
+  internal_api.SummaryResponse:
+    properties:
+      active_count:
+        example: 5
+        type: integer
+      category_breakdown:
+        items:
+          $ref: '#/definitions/internal_api.CategoryBreakdown'
+        type: array
+      currency:
+        example: JPY
+        type: string
+      monthly_trend:
+        items:
+          $ref: '#/definitions/internal_api.MonthlyTrendPoint'
+        type: array
+      total_monthly_jpy:
+        example: "7680"
+        type: string
+    type: object
+  internal_api.TemplateDTO:
+    properties:
+      icon_url:
+        example: https://example.com/netflix.png
+        type: string
+      id:
+        example: 26c8c2b0-4e6c-42c5-9a55-cfb0d4f6eb44
+        type: string
+      name:
+        example: Netflix
+        type: string
+      plans:
+        items:
+          $ref: '#/definitions/internal_api.PlanDTO'
+        type: array
+    type: object
+  internal_api.UpdateSubscriptionRequest:
+    properties:
+      billing_cycle:
+        enum:
+        - monthly
+        - yearly
+        example: monthly
+        type: string
+      category:
+        example: Entertainment
+        type: string
+      currency:
+        example: JPY
+        type: string
+      next_billing_date:
+        example: "2026-05-01"
+        type: string
+      payment_method:
+        example: Visa ****1234
+        type: string
+      plan_name:
+        example: Premium
+        type: string
+      price:
+        example: "2290"
+        type: string
+      service_name:
+        example: Netflix
+        type: string
+      status:
+        enum:
+        - active
+        - cancelled
+        example: active
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    Unified subscription management dashboard API.
+    All /api/v1 endpoints require a Supabase JWT
+    in the Authorization header.
+  title: Subscription Dashboard API
+  version: "1.0"
+paths:
+  /subscriptions:
+    get:
+      description: |-
+        Returns every subscription owned by the caller, including
+        cancelled ones, together with the effective monthly JPY cost
+        computed by the backend.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_api.ListSubscriptionsResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: List subscriptions for the authenticated user
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Creates a subscription owned by the authenticated user.
+        The user_id is taken from the JWT, never from the body.
+      parameters:
+      - description: subscription
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.CreateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_api.SubscriptionDTO'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Register a new subscription
+      tags:
+      - subscriptions
+  /subscriptions/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Full replacement update. Set status="cancelled" to soft-delete.
+      parameters:
+      - description: subscription id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: subscription
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_api.SubscriptionDTO'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Update an existing subscription (including cancellation)
+      tags:
+      - subscriptions
+  /summary:
+    get:
+      description: |-
+        Returns the effective monthly spend in JPY, a breakdown by
+        category for the pie chart, and a monthly trend for the
+        bar chart. All computations happen in Go with the fixed
+        FX rates configured on the backend.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_api.SummaryResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Dashboard summary with JPY totals and charts data
+      tags:
+      - summary
+  /templates:
+    get:
+      description: |-
+        Returns all pre-defined service templates (Netflix, Spotify,
+        etc.) with their plans nested inside. Consumed by the
+        "register from template" modal on the frontend.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_api.ListTemplatesResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: List subscription templates
+      tags:
+      - templates
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

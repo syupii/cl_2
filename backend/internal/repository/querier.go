@@ -15,7 +15,8 @@ type Querier interface {
 	// UpdateUserSubscription with status='cancelled', but cheaper for the client.
 	CancelUserSubscription(ctx context.Context, arg CancelUserSubscriptionParams) (UserSubscription, error)
 	// Insert a new subscription. user_id is always set from the JWT claim, never
-	// from the request body, so the INSERT policy's WITH CHECK passes.
+	// from the request body, so the INSERT policy's WITH CHECK passes. The
+	// handler is responsible for passing a valid status ('active' or 'cancelled').
 	CreateUserSubscription(ctx context.Context, arg CreateUserSubscriptionParams) (UserSubscription, error)
 	// Fetch one subscription by its primary key, scoped to the caller.
 	GetUserSubscription(ctx context.Context, arg GetUserSubscriptionParams) (UserSubscription, error)
