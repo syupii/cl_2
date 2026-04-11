@@ -13,4 +13,9 @@ const supabaseAnonKey = (
  * Supabase stores the session in localStorage, so calling createClient
  * multiple times returns the same underlying session.
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+  },
+})

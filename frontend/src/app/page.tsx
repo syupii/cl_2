@@ -1,7 +1,30 @@
-// Root page: immediately redirect to the dashboard.
-// The dashboard layout handles the auth guard and redirects to /login if needed.
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function RootPage() {
-  redirect('/dashboard')
+  const router = useRouter()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const hash = window.location.hash
+
+    // Supabase password recovery redirects here when /reset-password is not whitelisted.
+    // Preserve the code/hash and forward to the correct page.
+    if (code) {
+      router.replace(`/reset-password?code=${code}`)
+      return
+    }
+    if (hash.includes('type=recovery')) {
+      router.replace(`/reset-password${hash}`)
+      return
+    }
+
+    router.replace('/dashboard')
+  }, [router])
+
+  // Blank while detecting — avoid flash
+  return null
 }
