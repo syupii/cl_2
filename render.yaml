@@ -1,0 +1,31 @@
+# Render IaC (Infrastructure as Code) config.
+# Docs: https://render.com/docs/infrastructure-as-code
+#
+# このファイルを GitHub に push すると Render が自動でサービスを検出します。
+# 環境変数の値は sync:false のため、Render ダッシュボードで手動設定が必要です。
+
+services:
+  - type: web
+    name: subscription-dashboard-api
+    runtime: docker
+    # Dockerfile はリポジトリルートに置いてある
+    dockerfilePath: ./Dockerfile
+    # Render の無料プラン (15分非アクティブでスリープ、有料は starter: $7/月)
+    plan: free
+    # デプロイ後に Render がこのパスに GET して 200 が返るか確認する
+    healthCheckPath: /healthz
+    envVars:
+      # ── 必須: Render ダッシュボードで値を設定してください ──────────────
+      - key: DATABASE_URL
+        sync: false   # Supabase → Settings → Database → Connection pooling URI
+      - key: SUPABASE_JWT_SECRET
+        sync: false   # Supabase → Settings → API → JWT Settings → JWT Secret
+      - key: SUPABASE_JWT_ISSUER
+        sync: false   # https://[project-id].supabase.co/auth/v1
+      - key: ALLOWED_ORIGINS
+        sync: false   # Vercel デプロイ後に https://your-app.vercel.app を設定
+
+      # ── デフォルト値で OK ───────────────────────────────────────────────
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+      # PORT は Render が自動注入するため設定不要

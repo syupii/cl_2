@@ -1,0 +1,16 @@
+# Don't copy local secrets or dev artefacts into the image.
+.env
+.env.*
+
+# Git history not needed in the build context.
+.git
+.gitignore
+
+# Editor and OS noise.
+.DS_Store
+.idea/
+.vscode/
+
+# Built binaries (handled inside Docker).
+/api
+/bin/
