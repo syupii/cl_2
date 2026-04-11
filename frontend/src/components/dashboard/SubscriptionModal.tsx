@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -40,6 +41,7 @@ const schema = z.object({
   next_billing_date: z.string().min(1, '次回請求日を入力してください'),
   category: z.string().optional(),
   payment_method: z.string().optional(),
+  notes: z.string().optional(),
   status: z.enum(['active', 'cancelled']).optional(),
 })
 
@@ -101,6 +103,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
           next_billing_date: editData.next_billing_date ?? '',
           category: editData.category ?? '',
           payment_method: editData.payment_method ?? '',
+          notes: editData.notes ?? '',
           status: editData.status as 'active' | 'cancelled' ?? 'active',
         }
       : {
@@ -148,6 +151,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
             next_billing_date: values.next_billing_date,
             category: values.category || undefined,
             payment_method: values.payment_method || undefined,
+            notes: values.notes || undefined,
             status: values.status ?? 'active',
           },
         })
@@ -162,6 +166,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
           next_billing_date: values.next_billing_date,
           category: values.category || undefined,
           payment_method: values.payment_method || undefined,
+          notes: values.notes || undefined,
         })
         toast.success('サブスクリプションを追加しました')
       }
@@ -371,6 +376,18 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
               <datalist id="payment-method-list">
                 {paymentMethods.map((p) => <option key={p} value={p} />)}
               </datalist>
+            </div>
+
+            {/* メモ */}
+            <div className="space-y-1">
+              <Label htmlFor="notes">メモ</Label>
+              <Textarea
+                id="notes"
+                {...register('notes')}
+                placeholder="家族プラン、会社経費など"
+                rows={2}
+                className="resize-none"
+              />
             </div>
 
             {/* ステータス（編集時のみ） */}

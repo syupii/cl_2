@@ -181,6 +181,8 @@ export interface definitions {
     currency?: string;
     /** @example 2026-05-01 */
     next_billing_date?: string;
+    /** @example 家族プラン */
+    notes?: string;
     /** @example Visa ****1234 */
     payment_method?: string;
     /** @example Premium */
@@ -239,6 +241,8 @@ export interface definitions {
     monthly_cost_jpy?: string;
     /** @example 2026-05-01 */
     next_billing_date?: string;
+    /** @example 家族プラン */
+    notes?: string;
     /** @example Visa ****1234 */
     payment_method?: string;
     /** @example Premium */
@@ -286,6 +290,8 @@ export interface definitions {
     currency?: string;
     /** @example 2026-05-01 */
     next_billing_date?: string;
+    /** @example 家族プラン */
+    notes?: string;
     /** @example Visa ****1234 */
     payment_method?: string;
     /** @example Premium */

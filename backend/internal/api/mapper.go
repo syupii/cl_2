@@ -31,6 +31,7 @@ func toSubscriptionDTO(row repository.UserSubscription, conv *money.Converter) (
 		NextBillingDate: row.NextBillingDate.Format(dateLayout),
 		Category:        pgTextPtr(row.Category),
 		PaymentMethod:   pgTextPtr(row.PaymentMethod),
+		Notes:           pgTextPtr(row.Notes),
 		Status:          row.Status,
 		CreatedAt:       row.CreatedAt.UTC().Format(time.RFC3339),
 		UpdatedAt:       row.UpdatedAt.UTC().Format(time.RFC3339),

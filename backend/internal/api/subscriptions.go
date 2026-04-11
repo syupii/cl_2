@@ -89,6 +89,7 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 		NextBillingDate: nextDate,
 		Category:        pgTextFromPtr(req.Category),
 		PaymentMethod:   pgTextFromPtr(req.PaymentMethod),
+		Notes:           pgTextFromPtr(req.Notes),
 		Status:          "active",
 	}
 
@@ -166,6 +167,7 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 		NextBillingDate: nextDate,
 		Category:        pgTextFromPtr(req.Category),
 		PaymentMethod:   pgTextFromPtr(req.PaymentMethod),
+		Notes:           pgTextFromPtr(req.Notes),
 		Status:          status,
 	}
 
