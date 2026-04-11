@@ -8,10 +8,8 @@ services:
   - type: web
     name: subscription-dashboard-api
     runtime: docker
-    # Dockerfile はリポジトリルートからの相対パスで指定
-    dockerfilePath: ./backend/Dockerfile
-    # Docker ビルドコンテキスト (go.mod がある場所)
-    dockerContext: ./backend
+    # Dockerfile はリポジトリルートに置いてある
+    dockerfilePath: ./Dockerfile
     # Render の無料プラン (15分非アクティブでスリープ、有料は starter: $7/月)
     plan: free
     # デプロイ後に Render がこのパスに GET して 200 が返るか確認する
