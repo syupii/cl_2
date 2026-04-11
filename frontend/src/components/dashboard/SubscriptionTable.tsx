@@ -110,7 +110,7 @@ export function SubscriptionTable() {
   }
 
   async function handleAdvanceDate(sub: SubscriptionDTO) {
-    const next = advanceDate(sub.next_billing_date, sub.billing_cycle)
+    const next = advanceDate(sub.next_billing_date ?? '', sub.billing_cycle ?? 'monthly')
     if (!confirm(`次回請求日を ${next} に更新しますか？`)) return
     try {
       await updateMutation.mutateAsync({
