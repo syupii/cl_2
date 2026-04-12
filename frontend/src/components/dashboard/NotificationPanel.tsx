@@ -104,7 +104,7 @@ export function NotificationPanel() {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-80 rounded-lg border bg-popover shadow-lg">
+        <div className="fixed right-4 top-14 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-lg border bg-popover shadow-lg sm:absolute sm:right-0 sm:top-10 sm:w-80">
           {/* ヘッダー */}
           <div className="flex items-center justify-between border-b px-4 py-3">
             <p className="text-sm font-semibold">通知</p>

@@ -111,6 +111,7 @@ export function SubscriptionTable() {
   }
 
   async function handleRestore(sub: SubscriptionDTO) {
+    if (!confirm(`「${sub.service_name}」を有効に戻しますか？`)) return
     try {
       await updateMutation.mutateAsync({
         id: sub.id!,
@@ -120,7 +121,7 @@ export function SubscriptionTable() {
           price: sub.price,
           currency: sub.currency,
           billing_cycle: sub.billing_cycle,
-          next_billing_date: sub.next_billing_date,
+          next_billing_date: sub.next_billing_date ?? '',
           category: sub.category ?? undefined,
           payment_method: sub.payment_method ?? undefined,
           notes: sub.notes ?? undefined,
@@ -134,7 +135,7 @@ export function SubscriptionTable() {
   }
 
   async function handleDelete(sub: SubscriptionDTO) {
-    if (!confirm(`「${sub.service_name}」を完全に削除しますか？この操作は元に戻せません。`)) return
+    if (!confirm(`「${sub.service_name}」を完全に削除しますか？この操作は取り消せません。`)) return
     try {
       await deleteMutation.mutateAsync(sub.id!)
       toast.success('削除しました')
@@ -201,30 +202,32 @@ export function SubscriptionTable() {
           ))}
         </div>
 
-        {/* 検索 + フィルタ + CSV */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-32">
-            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="サービス名で検索"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-7"
-            />
-          </div>
+        {/* 検索 */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="サービス名で検索"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full pl-8"
+          />
+        </div>
+
+        {/* フィルタ + CSV */}
+        <div className="flex items-center gap-2">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
+            className="h-9 flex-1 rounded-md border bg-background px-2 text-sm text-foreground sm:flex-none"
           >
             <option value="">全カテゴリ</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 gap-1">
+          <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 shrink-0 gap-1.5">
             <Download className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">CSV</span>
+            <span className="hidden sm:inline">CSV出力</span>
           </Button>
         </div>
       </div>
@@ -242,68 +245,81 @@ export function SubscriptionTable() {
             {filtered.map((sub) => (
               <div
                 key={sub.id}
-                className={`rounded-lg border p-3 ${sub.status === 'cancelled' ? 'opacity-60' : ''}`}
+                className={`rounded-xl border bg-card ${sub.status === 'cancelled' ? 'opacity-60' : ''}`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{sub.service_name}</p>
-                    {sub.plan_name && <p className="text-xs text-muted-foreground">{sub.plan_name}</p>}
-                    {sub.category && <p className="text-xs text-muted-foreground">{sub.category}</p>}
+                {/* カード上部: サービス情報 + 金額 */}
+                <div className="flex items-start justify-between gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold truncate">{sub.service_name}</p>
+                      <Badge variant={sub.status === 'active' ? 'default' : 'secondary'} className="shrink-0 text-xs">
+                        {sub.status === 'active' ? '有効' : '解約'}
+                      </Badge>
+                    </div>
+                    {sub.plan_name && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">{sub.plan_name}</p>
+                    )}
+                    {sub.category && (
+                      <p className="text-xs text-muted-foreground">{sub.category}</p>
+                    )}
                     {sub.notes && (
-                      <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
-                        <FileText className="h-3 w-3" />{sub.notes}
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <FileText className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{sub.notes}</span>
                       </p>
                     )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-semibold">{formatJPY(sub.monthly_cost_jpy)}<span className="text-xs font-normal text-muted-foreground">/月</span></p>
+                  <div className="shrink-0 text-right">
+                    <p className="text-base font-bold">
+                      {formatJPY(sub.monthly_cost_jpy)}
+                      <span className="text-xs font-normal text-muted-foreground">/月</span>
+                    </p>
                     <p className="text-xs text-muted-foreground">{sub.next_billing_date}</p>
-                    <Badge variant={sub.status === 'active' ? 'default' : 'secondary'} className="mt-1 text-xs">
-                      {sub.status === 'active' ? '有効' : '解約済み'}
-                    </Badge>
                   </div>
                 </div>
-                <div className="mt-2 flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditTarget(sub)}>
-                    <Pencil className="h-3.5 w-3.5" />
+
+                {/* カード下部: アクションボタン */}
+                <div className="flex items-center justify-end gap-0.5 border-t px-2 py-1.5">
+                  <Button variant="ghost" size="icon" className="h-9 w-9" title="編集" onClick={() => setEditTarget(sub)}>
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   {sub.status === 'active' && (
                     <>
                       <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-blue-600"
-                        title="次回請求日を更新"
+                        variant="ghost" size="icon" className="h-9 w-9 text-blue-600"
+                        title="次回請求日を進める"
                         onClick={() => handleAdvanceDate(sub)}
                         disabled={updateMutation.isPending}
                       >
-                        <CalendarCheck className="h-3.5 w-3.5" />
+                        <CalendarCheck className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                        variant="ghost" size="icon" className="h-9 w-9 text-orange-500"
                         title="解約済みにする"
                         onClick={() => handleCancel(sub)}
                         disabled={updateMutation.isPending}
                       >
-                        <Ban className="h-3.5 w-3.5" />
+                        <Ban className="h-4 w-4" />
                       </Button>
                     </>
                   )}
                   {sub.status === 'cancelled' && (
                     <Button
-                      variant="ghost" size="icon" className="h-7 w-7 text-green-600"
+                      variant="ghost" size="icon" className="h-9 w-9 text-green-600"
                       title="有効に戻す"
                       onClick={() => handleRestore(sub)}
                       disabled={updateMutation.isPending}
                     >
-                      <RotateCcw className="h-3.5 w-3.5" />
+                      <RotateCcw className="h-4 w-4" />
                     </Button>
                   )}
                   <Button
-                    variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                    variant="ghost" size="icon" className="h-9 w-9 text-destructive"
                     title="完全に削除"
                     onClick={() => handleDelete(sub)}
                     disabled={deleteMutation.isPending}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -360,7 +376,7 @@ export function SubscriptionTable() {
                               <CalendarCheck className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                              variant="ghost" size="icon" className="h-8 w-8 text-orange-500"
                               title="解約済みにする"
                               onClick={() => handleCancel(sub)}
                               disabled={updateMutation.isPending}

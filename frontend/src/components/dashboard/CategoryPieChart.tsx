@@ -64,21 +64,17 @@ export function CategoryPieChart() {
       <CardHeader>
         <CardTitle className="text-sm font-medium">カテゴリ別支出</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={280}>
+      <CardContent className="px-2 pb-2 sm:px-6 sm:pb-6">
+        <ResponsiveContainer width="100%" height={260}>
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
+              cy="45%"
+              innerRadius={50}
+              outerRadius={85}
               paddingAngle={3}
               dataKey="value"
-              label={({ name, percent }: { name?: string; percent?: number }) =>
-                `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
-              }
-              labelLine={false}
             >
               {chartData.map((_, index) => (
                 <Cell
@@ -90,7 +86,10 @@ export function CategoryPieChart() {
             <Tooltip
               formatter={(value) => [formatJPY(Number(value)), '月額負担']}
             />
-            <Legend />
+            <Legend
+              iconSize={10}
+              wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+            />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>

@@ -29,20 +29,19 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">ダッシュボード</h1>
-          <p className="text-sm text-muted-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">ダッシュボード</h1>
+          <p className="hidden text-sm text-muted-foreground sm:block">
             登録済みサブスクリプションの概要
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <DashboardSettings config={widgetConfig} onChange={setWidgetConfig} />
           <PaymentMethodManager />
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" />
+          <Button onClick={() => setAddOpen(true)} size="sm" className="h-9">
+            <Plus className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">サービスを追加</span>
-            <span className="sm:hidden">追加</span>
           </Button>
         </div>
       </div>
