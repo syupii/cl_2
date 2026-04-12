@@ -49,7 +49,7 @@ export function SummaryCards() {
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-2">
@@ -74,7 +74,7 @@ export function SummaryCards() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {/* 月間実質負担額 */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -84,10 +84,10 @@ export function SummaryCards() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className={`text-3xl font-bold tracking-tight ${overBudget ? 'text-destructive' : ''}`}>
+            <p className={`text-xl font-bold tracking-tight sm:text-3xl ${overBudget ? 'text-destructive' : ''}`}>
               {formatJPY(totalMonthly)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
               年額は月額換算・外貨は JPY 換算済み
             </p>
           </CardContent>
@@ -102,8 +102,8 @@ export function SummaryCards() {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tracking-tight">{formatJPY(annualCost)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">月額 × 12 ヶ月</p>
+            <p className="text-xl font-bold tracking-tight sm:text-3xl">{formatJPY(annualCost)}</p>
+            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">月額 × 12 ヶ月</p>
           </CardContent>
         </Card>
 
@@ -116,8 +116,8 @@ export function SummaryCards() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tracking-tight">{activeCount}</p>
-            <p className="mt-1 text-xs text-muted-foreground">ステータス: active</p>
+            <p className="text-xl font-bold tracking-tight sm:text-3xl">{activeCount}</p>
+            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">ステータス: active</p>
           </CardContent>
         </Card>
 
@@ -144,7 +144,7 @@ export function SummaryCards() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tracking-tight">{categoryCount}</p>
+            <p className="text-xl font-bold tracking-tight sm:text-3xl">{categoryCount}</p>
             {budget !== null ? (
               <p className="mt-1 text-xs text-muted-foreground">
                 予算: {formatJPY(budget)}/月
@@ -160,35 +160,34 @@ export function SummaryCards() {
 
       {/* 予算設定インライン */}
       {editingBudget && (
-        <div className="flex items-center gap-2 rounded-lg border p-3">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">月間予算:</span>
-          <Input
-            type="number"
-            placeholder="例: 5000"
-            value={budgetInput}
-            onChange={(e) => setBudgetInput(e.target.value)}
-            className="h-8 w-36"
-            autoFocus
-            onKeyDown={(e) => { if (e.key === 'Enter') saveBudget() }}
-          />
-          <span className="text-sm text-muted-foreground">円</span>
-          <Button size="sm" onClick={saveBudget}>保存</Button>
-          <Button size="sm" variant="ghost" onClick={() => setEditingBudget(false)}>
-            キャンセル
-          </Button>
-          {budget !== null && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive"
-              onClick={() => {
-                setBudgetInput('')
-                saveBudget()
-              }}
-            >
-              削除
+        <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center">
+          <span className="text-sm font-medium text-muted-foreground">月間予算</span>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              placeholder="例: 5000"
+              value={budgetInput}
+              onChange={(e) => setBudgetInput(e.target.value)}
+              className="h-8 flex-1 sm:w-36 sm:flex-none"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') saveBudget() }}
+            />
+            <span className="text-sm text-muted-foreground">円</span>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={saveBudget} className="flex-1 sm:flex-none">保存</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditingBudget(false)} className="flex-1 sm:flex-none">
+              キャンセル
             </Button>
-          )}
+            {budget !== null && (
+              <Button
+                size="sm" variant="ghost" className="text-destructive flex-1 sm:flex-none"
+                onClick={() => { setBudgetInput(''); saveBudget() }}
+              >
+                削除
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>

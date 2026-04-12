@@ -44,9 +44,9 @@ export function PaymentMethodManager() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1" onClick={() => setOpen(true)}>
-        <CreditCard className="h-3.5 w-3.5" />
-        決済手段を管理
+      <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setOpen(true)}>
+        <CreditCard className="h-4 w-4" />
+        <span className="hidden sm:inline">決済手段</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
