@@ -48,7 +48,20 @@ async function request<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 
-  const json = await res.json() as { success: boolean; data?: T; error?: string }
+  // 204 No Content や空ボディのレスポンスは JSON パースをスキップ
+  const contentType = res.headers.get('content-type') ?? ''
+  if (res.status === 204 || !contentType.includes('application/json')) {
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+    return undefined as T
+  }
+
+  const text = await res.text()
+  if (!text) {
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+    return undefined as T
+  }
+
+  const json = JSON.parse(text) as { success: boolean; data?: T; error?: string }
 
   if (!res.ok || !json.success) {
     throw new Error(json.error ?? `API error ${res.status}`)
