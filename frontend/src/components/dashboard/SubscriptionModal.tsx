@@ -65,7 +65,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   // the template picker.
   const [step, setStep] = useState<Step>(editData ? 'form' : 'template-select')
 
-  const { data: templates = [] } = useTemplates()
+  const { data: templates = [], isLoading: templatesLoading, isError: templatesError } = useTemplates()
   const { data: existingSubs = [] } = useSubscriptions()
   const createMutation = useCreateSubscription()
 
@@ -182,6 +182,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
 
   // Find the template matching the current service_name (for plan list).
   const currentServiceName = watch('service_name')
+  const currentCategory = watch('category')
   const matchedTemplate = currentServiceName
     ? templates.find((t) => t.name?.toLowerCase() === currentServiceName.toLowerCase())
     : undefined
@@ -202,29 +203,48 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
               よく使われるサービスからテンプレートを選んでください。
               手動で入力する場合は「手動で入力」を押してください。
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {templates.map((tpl) => (
-                <button
-                  key={tpl.id}
-                  className="flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors hover:bg-accent"
-                  onClick={() => applyTemplate(tpl)}
-                >
-                  {tpl.icon_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={tpl.icon_url}
-                      alt={tpl.name}
-                      className="h-8 w-8 rounded object-contain"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted text-lg">
-                      {tpl.name?.slice(0, 1)}
-                    </div>
-                  )}
-                  <span className="text-center leading-tight">{tpl.name}</span>
-                </button>
-              ))}
-            </div>
+
+            {templatesLoading ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
+                ))}
+              </div>
+            ) : templatesError ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-center space-y-1">
+                <p className="text-sm font-medium text-destructive">テンプレートの読み込みに失敗しました</p>
+                <p className="text-xs text-muted-foreground">バックエンドへの接続を確認してください</p>
+              </div>
+            ) : templates.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-6 text-center">
+                <p className="text-sm text-muted-foreground">テンプレートがありません</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {templates.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    className="flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors hover:bg-accent"
+                    onClick={() => applyTemplate(tpl)}
+                  >
+                    {tpl.icon_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={tpl.icon_url}
+                        alt={tpl.name}
+                        className="h-8 w-8 rounded object-contain"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded bg-muted text-lg">
+                        {tpl.name?.slice(0, 1)}
+                      </div>
+                    )}
+                    <span className="text-center leading-tight">{tpl.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <Separator />
             <Button
               variant="outline"
@@ -355,15 +375,25 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
             {/* カテゴリ */}
             <div className="space-y-1">
               <Label htmlFor="category">カテゴリ</Label>
+              {categories.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {categories.map((c) => (
+                    <Badge
+                      key={c}
+                      variant={currentCategory === c ? 'default' : 'outline'}
+                      className="cursor-pointer select-none"
+                      onClick={() => setValue('category', currentCategory === c ? '' : c)}
+                    >
+                      {c}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <Input
                 id="category"
                 {...register('category')}
-                placeholder="Entertainment, Music, Software…"
-                list="category-list"
+                placeholder={categories.length > 0 ? 'または自由入力…' : 'Entertainment, Music, Software…'}
               />
-              <datalist id="category-list">
-                {categories.map((c) => <option key={c} value={c} />)}
-              </datalist>
             </div>
 
             {/* 決済手段 */}
