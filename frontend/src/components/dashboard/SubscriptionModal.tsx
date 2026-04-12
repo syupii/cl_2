@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Search } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -64,6 +64,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   // In edit mode we go straight to the form; in create mode we start at
   // the template picker.
   const [step, setStep] = useState<Step>(editData ? 'form' : 'template-select')
+  const [templateSearch, setTemplateSearch] = useState('')
 
   const { data: templates = [], isLoading: templatesLoading, isError: templatesError, refetch: refetchTemplates } = useTemplates()
   const { data: existingSubs = [] } = useSubscriptions()
@@ -138,6 +139,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
     if (!open) {
       reset()
       setStep(editData ? 'form' : 'template-select')
+      setTemplateSearch('')
     }
   }, [open, editData, reset])
 
@@ -201,6 +203,9 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   // Find the template matching the current service_name (for plan list).
   const currentServiceName = watch('service_name')
   const currentCategory = watch('category')
+  const filteredTemplates = templates.filter((t) =>
+    t.name?.toLowerCase().includes(templateSearch.toLowerCase())
+  )
   const matchedTemplate = currentServiceName
     ? templates.find((t) => t.name?.toLowerCase() === currentServiceName.toLowerCase())
     : undefined
@@ -222,6 +227,19 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
               手動で入力する場合は「手動で入力」を押してください。
             </p>
 
+            {!templatesLoading && !templatesError && templates.length > 0 && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="サービスを検索…"
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="h-9 w-full rounded-md border bg-background pl-8 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            )}
+
             {templatesLoading ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
@@ -233,13 +251,15 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
                 <p className="text-sm font-medium text-destructive">テンプレートの読み込みに失敗しました</p>
                 <p className="text-xs text-muted-foreground">バックエンドへの接続を確認してください</p>
               </div>
-            ) : templates.length === 0 ? (
+            ) : filteredTemplates.length === 0 ? (
               <div className="rounded-lg border border-dashed p-6 text-center">
-                <p className="text-sm text-muted-foreground">テンプレートがありません</p>
+                <p className="text-sm text-muted-foreground">
+                  {templateSearch ? `「${templateSearch}」に一致するサービスがありません` : 'テンプレートがありません'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {templates.map((tpl) => (
+                {filteredTemplates.map((tpl) => (
                   <button
                     key={tpl.id}
                     className="flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors hover:bg-accent"

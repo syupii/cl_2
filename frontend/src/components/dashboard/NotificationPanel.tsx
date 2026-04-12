@@ -9,7 +9,7 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 import { formatDate, daysUntil } from '@/lib/utils'
 import { STORAGE_KEYS } from '@/lib/constants'
 
-const WARN_DAYS = 30
+const DEFAULT_WARN_DAYS = 30
 
 function loadDismissed(): Record<string, string> {
   if (typeof window === 'undefined') return {}
@@ -24,15 +24,22 @@ export function NotificationPanel() {
   const { data: subs = [] } = useSubscriptions()
   const [open, setOpen] = useState(false)
   const [dismissed, setDismissed] = useState<Record<string, string>>({})
+  const [warnDays, setWarnDays] = useState(DEFAULT_WARN_DAYS)
   const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setDismissed(loadDismissed()) }, [])
+  useEffect(() => {
+    setDismissed(loadDismissed())
+    // BillingAlerts と同じ設定値を使う
+    const n = parseInt(localStorage.getItem(STORAGE_KEYS.BILLING_ALERT_DAYS) ?? '', 10)
+    setWarnDays(isNaN(n) || n < 1 ? DEFAULT_WARN_DAYS : n)
+  }, [])
+
   useClickOutside(ref, () => setOpen(false), open)
 
   const notifications = subs
     .filter((s) => s.status === 'active')
     .map((s) => ({ sub: s, days: daysUntil(s.next_billing_date) }))
-    .filter(({ days }) => days !== null && days <= WARN_DAYS)
+    .filter(({ days }) => days !== null && days <= warnDays)
     .sort((a, b) => (a.days ?? 999) - (b.days ?? 999))
 
   const unread = notifications.filter(({ sub }) => dismissed[sub.id!] !== sub.next_billing_date)
@@ -80,7 +87,7 @@ export function NotificationPanel() {
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                今後{WARN_DAYS}日以内の請求はありません
+                今後{warnDays}日以内の請求はありません
               </p>
             ) : (
               notifications.map(({ sub, days }) => {

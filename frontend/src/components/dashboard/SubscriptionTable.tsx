@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Pencil, Ban, Download, Search, CalendarCheck, FileText, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { useState, useMemo, useCallback } from 'react'
+import { Pencil, Ban, Download, Search, CalendarCheck, FileText, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,7 @@ export function SubscriptionTable() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('next_billing_date')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   function toggleSort(key: SortKey) {
     if (sortBy === key) {
@@ -73,6 +74,58 @@ export function SubscriptionTable() {
 
   const activeCount = subscriptions.filter((s) => s.status === 'active').length
   const cancelledCount = subscriptions.filter((s) => s.status === 'cancelled').length
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const isAllSelected = filtered.length > 0 && filtered.every((s) => selectedIds.has(s.id!))
+
+  function toggleSelectAll() {
+    if (isAllSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map((s) => s.id!)))
+    }
+  }
+
+  async function handleBulkCancel() {
+    const targets = filtered.filter((s) => selectedIds.has(s.id!) && s.status === 'active')
+    if (targets.length === 0) return
+    if (!confirm(`選択した ${targets.length} 件を解約済みにしますか？`)) return
+    await Promise.all(targets.map((sub) =>
+      updateMutation.mutateAsync({
+        id: sub.id!,
+        body: {
+          service_name: sub.service_name,
+          plan_name: sub.plan_name ?? undefined,
+          price: sub.price,
+          currency: sub.currency,
+          billing_cycle: sub.billing_cycle,
+          next_billing_date: sub.next_billing_date,
+          category: sub.category ?? undefined,
+          payment_method: sub.payment_method ?? undefined,
+          notes: sub.notes ?? undefined,
+          status: 'cancelled',
+        },
+      })
+    ))
+    toast.success(`${targets.length} 件を解約済みにしました`)
+    setSelectedIds(new Set())
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`選択した ${selectedIds.size} 件を完全に削除しますか？この操作は取り消せません。`)) return
+    await Promise.all([...selectedIds].map((id) => deleteMutation.mutateAsync(id)))
+    toast.success(`${selectedIds.size} 件を削除しました`)
+    setSelectedIds(new Set())
+  }
 
   function exportCSV() {
     const headers = ['サービス名', 'プラン名', '料金', '通貨', '支払い周期', '次回請求日', 'カテゴリ', '決済手段', 'メモ', 'ステータス', '月額負担(JPY)']
@@ -218,6 +271,31 @@ export function SubscriptionTable() {
           ))}
         </div>
 
+        {/* 一括操作バー */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border bg-accent/30 px-3 py-2">
+            <CheckSquare className="h-4 w-4 shrink-0 text-primary" />
+            <span className="flex-1 text-sm font-medium">{selectedIds.size} 件選択中</span>
+            <Button
+              size="sm" variant="outline" className="h-7 text-xs"
+              onClick={handleBulkCancel}
+              disabled={updateMutation.isPending}
+            >
+              解約済みに変更
+            </Button>
+            <Button
+              size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive"
+              onClick={handleBulkDelete}
+              disabled={deleteMutation.isPending}
+            >
+              削除
+            </Button>
+            <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setSelectedIds(new Set())}>
+              解除
+            </button>
+          </div>
+        )}
+
         {/* 検索 */}
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -278,10 +356,18 @@ export function SubscriptionTable() {
             {filtered.map((sub) => (
               <div
                 key={sub.id}
-                className={`rounded-xl border bg-card ${sub.status === 'cancelled' ? 'opacity-60' : ''}`}
+                className={`rounded-xl border bg-card ${sub.status === 'cancelled' ? 'opacity-60' : ''} ${selectedIds.has(sub.id!) ? 'ring-2 ring-primary' : ''}`}
               >
                 {/* カード上部: サービス情報 + 金額 */}
                 <div className="flex items-start justify-between gap-3 p-3">
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-muted-foreground accent-primary"
+                      checked={selectedIds.has(sub.id!)}
+                      onChange={() => toggleSelect(sub.id!)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold truncate">{sub.service_name}</p>
@@ -301,6 +387,7 @@ export function SubscriptionTable() {
                         <span className="truncate">{sub.notes}</span>
                       </p>
                     )}
+                  </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-base font-bold">
@@ -364,6 +451,14 @@ export function SubscriptionTable() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
+                  <th className="w-10 px-3 py-3 text-left font-medium">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 cursor-pointer rounded border-muted-foreground accent-primary"
+                      checked={isAllSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">
                     <button
                       className="flex items-center gap-1 hover:text-foreground"
@@ -405,7 +500,15 @@ export function SubscriptionTable() {
               </thead>
               <tbody className="divide-y">
                 {filtered.map((sub) => (
-                  <tr key={sub.id} className={`hover:bg-muted/30 transition-colors ${sub.status === 'cancelled' ? 'opacity-50' : ''}`}>
+                  <tr key={sub.id} className={`hover:bg-muted/30 transition-colors ${sub.status === 'cancelled' ? 'opacity-50' : ''} ${selectedIds.has(sub.id!) ? 'bg-primary/5' : ''}`}>
+                    <td className="w-10 px-3 py-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 cursor-pointer rounded border-muted-foreground accent-primary"
+                        checked={selectedIds.has(sub.id!)}
+                        onChange={() => toggleSelect(sub.id!)}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <p className="font-medium">{sub.service_name}</p>
                       {sub.plan_name && <p className="text-xs text-muted-foreground">{sub.plan_name}</p>}

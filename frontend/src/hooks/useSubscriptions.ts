@@ -25,7 +25,35 @@ export function useCreateSubscription() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: CreateSubscriptionRequest) => createSubscription(body),
-    onSuccess: () => {
+    onMutate: async (body) => {
+      await qc.cancelQueries({ queryKey: SUBSCRIPTIONS_KEY })
+      const previous = qc.getQueryData<SubscriptionDTO[]>(SUBSCRIPTIONS_KEY)
+      const tempId = `temp-${Date.now()}`
+      qc.setQueryData<SubscriptionDTO[]>(SUBSCRIPTIONS_KEY, (old = []) => [
+        ...old,
+        {
+          id: tempId,
+          service_name: body.service_name,
+          plan_name: body.plan_name ?? null,
+          price: body.price,
+          currency: body.currency,
+          billing_cycle: body.billing_cycle,
+          next_billing_date: body.next_billing_date,
+          category: body.category ?? null,
+          payment_method: body.payment_method ?? null,
+          notes: body.notes ?? null,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          monthly_cost_jpy: body.price,
+        } as SubscriptionDTO,
+      ])
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(SUBSCRIPTIONS_KEY, ctx.previous)
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY })
       qc.invalidateQueries({ queryKey: ['summary'] })
     },

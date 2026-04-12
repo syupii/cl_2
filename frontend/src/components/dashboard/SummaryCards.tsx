@@ -40,6 +40,14 @@ export function SummaryCards() {
   const categoryCount = data?.category_breakdown?.length ?? 0
   const overBudget = budget !== null && totalMonthly > budget
 
+  // 前月比（monthly_trend の末尾2件から計算）
+  const trend = data?.monthly_trend ?? []
+  const prevAmount = trend.length >= 2 ? parseInt(trend[trend.length - 2].amount_jpy ?? '0', 10) : null
+  const currAmount = trend.length >= 1 ? parseInt(trend[trend.length - 1].amount_jpy ?? '0', 10) : null
+  const trendPct = prevAmount !== null && currAmount !== null && prevAmount > 0
+    ? Math.round(((currAmount - prevAmount) / prevAmount) * 100)
+    : null
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -81,9 +89,15 @@ export function SummaryCards() {
             <p className={`text-xl font-bold tracking-tight sm:text-3xl ${overBudget ? 'text-destructive' : ''}`}>
               {formatJPY(totalMonthly)}
             </p>
-            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
-              年額は月額換算・外貨は JPY 換算済み
-            </p>
+            {trendPct !== null ? (
+              <p className={`mt-1 text-xs font-medium ${trendPct > 0 ? 'text-destructive' : trendPct < 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                {trendPct > 0 ? '▲' : trendPct < 0 ? '▼' : '─'} {Math.abs(trendPct)}% 前月比
+              </p>
+            ) : (
+              <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+                年額は月額換算・外貨は JPY 換算済み
+              </p>
+            )}
           </CardContent>
         </Card>
 

@@ -37,19 +37,19 @@ var catalog = []service{
 		Name:    "Netflix",
 		IconURL: "https://www.google.com/s2/favicons?domain=netflix.com&sz=128",
 		Plans: []plan{
-			{Name: "広告つきスタンダード", Price: "790", Currency: "JPY", Cycle: "monthly"},
-			{Name: "スタンダード", Price: "1490", Currency: "JPY", Cycle: "monthly"},
-			{Name: "プレミアム", Price: "1980", Currency: "JPY", Cycle: "monthly"},
+			{Name: "広告つきスタンダード", Price: "890", Currency: "JPY", Cycle: "monthly"},
+			{Name: "スタンダード", Price: "1590", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム", Price: "2290", Currency: "JPY", Cycle: "monthly"},
 		},
 	},
 	{
 		Name:    "Spotify",
 		IconURL: "https://www.google.com/s2/favicons?domain=spotify.com&sz=128",
 		Plans: []plan{
-			{Name: "プレミアム（個人）", Price: "980", Currency: "JPY", Cycle: "monthly"},
-			{Name: "プレミアム（デュオ）", Price: "1280", Currency: "JPY", Cycle: "monthly"},
-			{Name: "プレミアム（ファミリー）", Price: "1580", Currency: "JPY", Cycle: "monthly"},
-			{Name: "プレミアム（学生）", Price: "480", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム（個人）", Price: "1080", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム（デュオ）", Price: "1480", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム（ファミリー）", Price: "1880", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム（学生）", Price: "580", Currency: "JPY", Cycle: "monthly"},
 		},
 	},
 	{
@@ -74,10 +74,10 @@ var catalog = []service{
 		Name:    "Disney+",
 		IconURL: "https://www.google.com/s2/favicons?domain=disneyplus.com&sz=128",
 		Plans: []plan{
-			{Name: "スタンダード 月払い", Price: "990", Currency: "JPY", Cycle: "monthly"},
-			{Name: "スタンダード 年払い", Price: "9900", Currency: "JPY", Cycle: "yearly"},
-			{Name: "プレミアム 月払い", Price: "1320", Currency: "JPY", Cycle: "monthly"},
-			{Name: "プレミアム 年払い", Price: "13200", Currency: "JPY", Cycle: "yearly"},
+			{Name: "スタンダード 月払い", Price: "1140", Currency: "JPY", Cycle: "monthly"},
+			{Name: "スタンダード 年払い", Price: "11400", Currency: "JPY", Cycle: "yearly"},
+			{Name: "プレミアム 月払い", Price: "1520", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム 年払い", Price: "15200", Currency: "JPY", Cycle: "yearly"},
 		},
 	},
 	{
@@ -101,19 +101,19 @@ var catalog = []service{
 		Name:    "iCloud+",
 		IconURL: "https://www.google.com/s2/favicons?domain=icloud.com&sz=128",
 		Plans: []plan{
-			{Name: "50GB", Price: "130", Currency: "JPY", Cycle: "monthly"},
-			{Name: "200GB", Price: "400", Currency: "JPY", Cycle: "monthly"},
-			{Name: "2TB", Price: "1300", Currency: "JPY", Cycle: "monthly"},
+			{Name: "50GB", Price: "150", Currency: "JPY", Cycle: "monthly"},
+			{Name: "200GB", Price: "450", Currency: "JPY", Cycle: "monthly"},
+			{Name: "2TB", Price: "1500", Currency: "JPY", Cycle: "monthly"},
 		},
 	},
 	{
 		Name:    "Microsoft 365",
 		IconURL: "https://www.google.com/s2/favicons?domain=microsoft.com&sz=128",
 		Plans: []plan{
-			{Name: "パーソナル 月払い", Price: "1490", Currency: "JPY", Cycle: "monthly"},
-			{Name: "パーソナル 年払い", Price: "14900", Currency: "JPY", Cycle: "yearly"},
-			{Name: "ファミリー 月払い", Price: "2100", Currency: "JPY", Cycle: "monthly"},
-			{Name: "ファミリー 年払い", Price: "21000", Currency: "JPY", Cycle: "yearly"},
+			{Name: "パーソナル 月払い", Price: "2130", Currency: "JPY", Cycle: "monthly"},
+			{Name: "パーソナル 年払い", Price: "21300", Currency: "JPY", Cycle: "yearly"},
+			{Name: "ファミリー 月払い", Price: "2740", Currency: "JPY", Cycle: "monthly"},
+			{Name: "ファミリー 年払い", Price: "27400", Currency: "JPY", Cycle: "yearly"},
 		},
 	},
 	{
@@ -134,16 +134,16 @@ var catalog = []service{
 		Name:    "dアニメストア",
 		IconURL: "https://www.google.com/s2/favicons?domain=animestore.docomo.ne.jp&sz=128",
 		Plans: []plan{
-			{Name: "月払い", Price: "550", Currency: "JPY", Cycle: "monthly"},
+			{Name: "月払い", Price: "660", Currency: "JPY", Cycle: "monthly"},
 		},
 	},
 	{
 		Name:    "Adobe Creative Cloud",
 		IconURL: "https://www.google.com/s2/favicons?domain=adobe.com&sz=128",
 		Plans: []plan{
-			{Name: "コンプリートプラン 月払い", Price: "7780", Currency: "JPY", Cycle: "monthly"},
+			{Name: "コンプリートプラン 月払い", Price: "9080", Currency: "JPY", Cycle: "monthly"},
 			{Name: "コンプリートプラン 年払い", Price: "72336", Currency: "JPY", Cycle: "yearly"},
-			{Name: "フォトプラン", Price: "2380", Currency: "JPY", Cycle: "monthly"},
+			{Name: "フォトプラン", Price: "3280", Currency: "JPY", Cycle: "monthly"},
 		},
 	},
 	{
@@ -151,7 +151,7 @@ var catalog = []service{
 		IconURL: "https://www.google.com/s2/favicons?domain=notion.so&sz=128",
 		Plans: []plan{
 			{Name: "Plus", Price: "10", Currency: "USD", Cycle: "monthly"},
-			{Name: "Business", Price: "15", Currency: "USD", Cycle: "monthly"},
+			{Name: "Business", Price: "20", Currency: "USD", Cycle: "monthly"},
 		},
 	},
 	{
@@ -191,14 +191,14 @@ var catalog = []service{
 		Name:    "NHKプラス",
 		IconURL: "https://www.google.com/s2/favicons?domain=nhk.jp&sz=128",
 		Plans: []plan{
-			{Name: "月払い", Price: "1320", Currency: "JPY", Cycle: "monthly"},
+			{Name: "ネット専用（月払い）", Price: "1100", Currency: "JPY", Cycle: "monthly"},
 		},
 	},
 	{
 		Name:    "AbemaTV",
 		IconURL: "https://www.google.com/s2/favicons?domain=abema.tv&sz=128",
 		Plans: []plan{
-			{Name: "プレミアム 月払い", Price: "960", Currency: "JPY", Cycle: "monthly"},
+			{Name: "プレミアム 月払い", Price: "1080", Currency: "JPY", Cycle: "monthly"},
 			{Name: "プレミアム 年払い", Price: "9600", Currency: "JPY", Cycle: "yearly"},
 		},
 	},
