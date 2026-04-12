@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Pencil, Ban, Download, Search, CalendarCheck, FileText, Trash2, RotateCcw } from 'lucide-react'
+import { Pencil, Ban, Download, Search, CalendarCheck, FileText, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,8 @@ function advanceDate(dateStr: string, cycle: string): string {
 }
 
 type TabValue = 'active' | 'cancelled' | 'all'
+type SortKey = 'service_name' | 'monthly_cost_jpy' | 'next_billing_date'
+type SortDir = 'asc' | 'desc'
 
 export function SubscriptionTable() {
   const { data: subscriptions = [], isLoading } = useSubscriptions()
@@ -39,6 +41,17 @@ export function SubscriptionTable() {
   const [tab, setTab] = useState<TabValue>('active')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [sortBy, setSortBy] = useState<SortKey>('next_billing_date')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function toggleSort(key: SortKey) {
+    if (sortBy === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(key)
+      setSortDir('asc')
+    }
+  }
 
   const categories = useMemo(() => {
     const cats = subscriptions.map((s) => s.category).filter((c): c is string => !!c)
@@ -46,14 +59,25 @@ export function SubscriptionTable() {
   }, [subscriptions])
 
   const filtered = useMemo(() => {
-    return subscriptions.filter((sub) => {
+    const arr = subscriptions.filter((sub) => {
       if (tab === 'active' && sub.status !== 'active') return false
       if (tab === 'cancelled' && sub.status !== 'cancelled') return false
       if (search && !sub.service_name?.toLowerCase().includes(search.toLowerCase())) return false
       if (categoryFilter && sub.category !== categoryFilter) return false
       return true
     })
-  }, [subscriptions, tab, search, categoryFilter])
+    return arr.sort((a, b) => {
+      let cmp = 0
+      if (sortBy === 'service_name') {
+        cmp = (a.service_name ?? '').localeCompare(b.service_name ?? '', 'ja')
+      } else if (sortBy === 'monthly_cost_jpy') {
+        cmp = parseInt(a.monthly_cost_jpy ?? '0', 10) - parseInt(b.monthly_cost_jpy ?? '0', 10)
+      } else {
+        cmp = (a.next_billing_date ?? '').localeCompare(b.next_billing_date ?? '')
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [subscriptions, tab, search, categoryFilter, sortBy, sortDir])
 
   const activeCount = subscriptions.filter((s) => s.status === 'active').length
   const cancelledCount = subscriptions.filter((s) => s.status === 'cancelled').length
@@ -213,7 +237,7 @@ export function SubscriptionTable() {
           />
         </div>
 
-        {/* フィルタ + CSV */}
+        {/* フィルタ + ソート + CSV */}
         <div className="flex items-center gap-2">
           <select
             value={categoryFilter}
@@ -224,6 +248,23 @@ export function SubscriptionTable() {
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
+          </select>
+          {/* モバイル用ソート選択 */}
+          <select
+            value={`${sortBy}:${sortDir}`}
+            onChange={(e) => {
+              const [key, dir] = e.target.value.split(':') as [SortKey, SortDir]
+              setSortBy(key)
+              setSortDir(dir)
+            }}
+            className="h-9 flex-1 rounded-md border bg-background px-2 text-sm text-foreground sm:hidden"
+          >
+            <option value="next_billing_date:asc">請求日 ↑</option>
+            <option value="next_billing_date:desc">請求日 ↓</option>
+            <option value="monthly_cost_jpy:asc">金額 ↑</option>
+            <option value="monthly_cost_jpy:desc">金額 ↓</option>
+            <option value="service_name:asc">名前 ↑</option>
+            <option value="service_name:desc">名前 ↓</option>
           </select>
           <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 shrink-0 gap-1.5">
             <Download className="h-3.5 w-3.5" />
@@ -331,10 +372,40 @@ export function SubscriptionTable() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium">サービス名</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort('service_name')}
+                    >
+                      サービス名
+                      {sortBy === 'service_name' ? (
+                        sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  </th>
                   <th className="px-4 py-3 text-left font-medium hidden md:table-cell">カテゴリ</th>
-                  <th className="px-4 py-3 text-left font-medium">月額(JPY)</th>
-                  <th className="px-4 py-3 text-left font-medium hidden lg:table-cell">次回請求日</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort('monthly_cost_jpy')}
+                    >
+                      月額(JPY)
+                      {sortBy === 'monthly_cost_jpy' ? (
+                        sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium hidden lg:table-cell">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort('next_billing_date')}
+                    >
+                      次回請求日
+                      {sortBy === 'next_billing_date' ? (
+                        sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  </th>
                   <th className="px-4 py-3 text-left font-medium hidden xl:table-cell">メモ</th>
                   <th className="px-4 py-3 text-left font-medium">状態</th>
                   <th className="px-4 py-3 text-right font-medium">操作</th>

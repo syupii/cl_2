@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge'
 import { useCreateSubscription, useUpdateSubscription, useSubscriptions } from '@/hooks/useSubscriptions'
 import { useTemplates } from '@/hooks/useTemplates'
 import { usePaymentMethods } from '@/hooks/usePaymentMethods'
+import { useCategories } from '@/hooks/useCategories'
 import type { SubscriptionDTO, PlanDTO, TemplateDTO } from '@/lib/api-client'
 
 // ── Zod schema ─────────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   const createMutation = useCreateSubscription()
 
   const { data: dbPaymentMethods = [] } = usePaymentMethods()
+  const { categories: predefinedCategories } = useCategories()
 
   // DB登録済み + 過去入力履歴をマージして候補リストを生成
   const paymentMethodsFromHistory = [...new Set(
@@ -78,9 +80,9 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
     ...dbPaymentMethods.map((m) => m.name),
     ...paymentMethodsFromHistory,
   ])]
-  const categories = [...new Set(
-    existingSubs.map((s) => s.category).filter((v): v is string => !!v)
-  )]
+  // 事前登録カテゴリ + 既存サブスクから使用中カテゴリをマージ
+  const usedCategories = existingSubs.map((s) => s.category).filter((v): v is string => !!v)
+  const categories = [...new Set([...predefinedCategories, ...usedCategories])].sort()
   const updateMutation = useUpdateSubscription()
   const isSubmitting = createMutation.isPending || updateMutation.isPending
 
