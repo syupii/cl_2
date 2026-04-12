@@ -56,6 +56,7 @@ func NewRouter(cfg RouterConfig) http.Handler {
 		r.Delete("/subscriptions/{id}", cfg.Handler.DeleteSubscription)
 
 		r.Get("/templates", cfg.Handler.ListTemplates)
+		r.Put("/templates/plans/{id}", cfg.Handler.UpdatePlanPrice)
 
 		r.Get("/summary", cfg.Handler.GetSummary)
 

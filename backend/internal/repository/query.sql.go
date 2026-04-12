@@ -14,6 +14,19 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const updateServicePlanPrice = `-- name: UpdateServicePlanPrice :exec
+UPDATE public.service_plans
+SET default_price = $2,
+    currency      = $3
+WHERE id = $1
+`
+
+// UpdateServicePlanPrice updates the price and currency of a service plan.
+func (q *Queries) UpdateServicePlanPrice(ctx context.Context, id uuid.UUID, price, currency string) error {
+	_, err := q.db.Exec(ctx, updateServicePlanPrice, id, price, currency)
+	return err
+}
+
 const deleteUserSubscription = `-- name: DeleteUserSubscription :exec
 DELETE FROM public.user_subscriptions
 WHERE id = $1

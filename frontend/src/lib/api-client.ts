@@ -80,6 +80,10 @@ export function fetchTemplates(): Promise<{ templates: TemplateDTO[] }> {
   return request('GET', '/templates')
 }
 
+export function updatePlanPrice(id: string, defaultPrice: string, currency: string): Promise<void> {
+  return request('PUT', `/templates/plans/${id}`, { default_price: defaultPrice, currency })
+}
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 export function fetchSummary(): Promise<SummaryResponse> {
