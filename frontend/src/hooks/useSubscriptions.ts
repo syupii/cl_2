@@ -5,6 +5,7 @@ import {
   fetchSubscriptions,
   updateSubscription,
   type CreateSubscriptionRequest,
+  type SubscriptionDTO,
   type UpdateSubscriptionRequest,
 } from '@/lib/api-client'
 
@@ -24,7 +25,10 @@ export function useCreateSubscription() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: CreateSubscriptionRequest) => createSubscription(body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY }) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY })
+      qc.invalidateQueries({ queryKey: ['summary'] })
+    },
   })
 }
 
@@ -33,7 +37,34 @@ export function useUpdateSubscription() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: UpdateSubscriptionRequest }) =>
       updateSubscription(id, body),
-    onSuccess: () => {
+    onMutate: async ({ id, body }) => {
+      await qc.cancelQueries({ queryKey: SUBSCRIPTIONS_KEY })
+      const previous = qc.getQueryData<SubscriptionDTO[]>(SUBSCRIPTIONS_KEY)
+      qc.setQueryData<SubscriptionDTO[]>(SUBSCRIPTIONS_KEY, (old = []) =>
+        old.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                service_name: body.service_name,
+                plan_name: body.plan_name,
+                price: body.price,
+                currency: body.currency,
+                billing_cycle: body.billing_cycle,
+                next_billing_date: body.next_billing_date,
+                category: body.category,
+                payment_method: body.payment_method,
+                notes: body.notes,
+                status: body.status ?? s.status,
+              } as SubscriptionDTO
+            : s
+        )
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(SUBSCRIPTIONS_KEY, ctx.previous)
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY })
       qc.invalidateQueries({ queryKey: ['summary'] })
     },
@@ -44,7 +75,18 @@ export function useDeleteSubscription() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteSubscription(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: SUBSCRIPTIONS_KEY })
+      const previous = qc.getQueryData<SubscriptionDTO[]>(SUBSCRIPTIONS_KEY)
+      qc.setQueryData<SubscriptionDTO[]>(SUBSCRIPTIONS_KEY, (old = []) =>
+        old.filter((s) => s.id !== id)
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(SUBSCRIPTIONS_KEY, ctx.previous)
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY })
       qc.invalidateQueries({ queryKey: ['summary'] })
     },

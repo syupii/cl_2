@@ -11,14 +11,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSummary } from '@/hooks/useSummary'
-
-function formatJPY(value: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(value)
-}
+import { formatJPY } from '@/lib/utils'
 
 // "2026-04" → "4月"
 function toLabel(month: string): string {

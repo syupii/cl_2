@@ -10,11 +10,14 @@ import { MonthlyBarChart } from '@/components/dashboard/MonthlyBarChart'
 import { SubscriptionTable } from '@/components/dashboard/SubscriptionTable'
 import { SubscriptionModal } from '@/components/dashboard/SubscriptionModal'
 import { PaymentMethodManager } from '@/components/dashboard/PaymentMethodManager'
+import { CategoryManager } from '@/components/dashboard/CategoryManager'
+import { CSVImport } from '@/components/dashboard/CSVImport'
 import { BillingAlerts } from '@/components/dashboard/BillingAlerts'
 import { DashboardSettings, loadWidgetConfig, type WidgetConfig } from '@/components/dashboard/DashboardSettings'
 
 export default function DashboardPage() {
   const [addOpen, setAddOpen] = useState(false)
+  const [csvOpen, setCsvOpen] = useState(false)
   const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>({
     alerts: true,
     kpi: true,
@@ -38,7 +41,9 @@ export default function DashboardPage() {
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <DashboardSettings config={widgetConfig} onChange={setWidgetConfig} />
+          <CategoryManager />
           <PaymentMethodManager />
+          <CSVImport open={csvOpen} onOpenChange={setCsvOpen} />
           <Button onClick={() => setAddOpen(true)} size="sm" className="h-9">
             <Plus className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">サービスを追加</span>

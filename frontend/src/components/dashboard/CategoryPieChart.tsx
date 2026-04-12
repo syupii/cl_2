@@ -10,19 +10,13 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSummary } from '@/hooks/useSummary'
+import { formatJPY } from '@/lib/utils'
 
 const COLORS = [
   '#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd',
   '#818cf8', '#4f46e5', '#7c3aed', '#d946ef',
 ]
 
-function formatJPY(value: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(value)
-}
 
 export function CategoryPieChart() {
   const { data, isLoading } = useSummary()
