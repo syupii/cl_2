@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge'
 import { useCreateSubscription, useUpdateSubscription, useSubscriptions } from '@/hooks/useSubscriptions'
 import { useTemplates } from '@/hooks/useTemplates'
 import { usePaymentMethods } from '@/hooks/usePaymentMethods'
-import { useCategories } from '@/hooks/useCategories'
+import { STORAGE_KEYS } from '@/lib/constants'
 import type { SubscriptionDTO, PlanDTO, TemplateDTO } from '@/lib/api-client'
 
 // ── Zod schema ─────────────────────────────────────────────────────────────
@@ -70,7 +70,18 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   const createMutation = useCreateSubscription()
 
   const { data: dbPaymentMethods = [] } = usePaymentMethods()
-  const { categories: predefinedCategories } = useCategories()
+
+  // モーダルが開くたびに localStorage から再読み込み（CategoryManager で追加した直後も反映）
+  const [predefinedCategories, setPredefinedCategories] = useState<string[]>([])
+  useEffect(() => {
+    if (!open) return
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PREDEFINED_CATEGORIES)
+      setPredefinedCategories(saved ? (JSON.parse(saved) as string[]) : [])
+    } catch {
+      setPredefinedCategories([])
+    }
+  }, [open])
 
   // DB登録済み + 過去入力履歴をマージして候補リストを生成
   const paymentMethodsFromHistory = [...new Set(
