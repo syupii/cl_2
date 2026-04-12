@@ -3,10 +3,12 @@ package api
 import (
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"github.com/syupii/cl_2/backend/internal/auth"
 	"github.com/syupii/cl_2/backend/internal/httpx"
 )
 
@@ -33,6 +35,17 @@ var reCurrency = regexp.MustCompile(`^[A-Z]{3}$`)
 // @Failure      500   {object}  httpx.Response
 // @Router       /templates/plans/{id} [put]
 func (h *Handler) UpdatePlanPrice(w http.ResponseWriter, r *http.Request) {
+	// Admin-only: reject if no admin email configured or caller doesn't match.
+	if h.adminEmail == "" {
+		httpx.Forbidden(w, "admin endpoint not configured")
+		return
+	}
+	caller, ok := auth.UserFromContext(r.Context())
+	if !ok || strings.ToLower(caller.Email) != h.adminEmail {
+		httpx.Forbidden(w, "admin only")
+		return
+	}
+
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {

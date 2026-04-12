@@ -9,11 +9,12 @@ import (
 // money converter. Construct it once in main and pass the receiver methods
 // to the chi router.
 type Handler struct {
-	repo repository.Querier
-	conv *money.Converter
+	repo       repository.Querier
+	conv       *money.Converter
+	adminEmail string // lowercase email; empty = admin routes disabled
 }
 
 // NewHandler builds a Handler. Both dependencies are required.
-func NewHandler(repo repository.Querier, conv *money.Converter) *Handler {
-	return &Handler{repo: repo, conv: conv}
+func NewHandler(repo repository.Querier, conv *money.Converter, adminEmail string) *Handler {
+	return &Handler{repo: repo, conv: conv, adminEmail: adminEmail}
 }

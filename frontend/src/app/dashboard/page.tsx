@@ -12,7 +12,6 @@ import { SubscriptionModal } from '@/components/dashboard/SubscriptionModal'
 import { PaymentMethodManager } from '@/components/dashboard/PaymentMethodManager'
 import { BillingAlerts } from '@/components/dashboard/BillingAlerts'
 import { DashboardSettings, loadWidgetConfig, type WidgetConfig } from '@/components/dashboard/DashboardSettings'
-import { TemplatePriceManager } from '@/components/dashboard/TemplatePriceManager'
 
 export default function DashboardPage() {
   const [addOpen, setAddOpen] = useState(false)
@@ -39,7 +38,6 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <DashboardSettings config={widgetConfig} onChange={setWidgetConfig} />
-          <TemplatePriceManager />
           <PaymentMethodManager />
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="mr-1 h-4 w-4" />

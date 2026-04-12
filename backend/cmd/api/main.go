@@ -78,7 +78,7 @@ func run() error {
 		return err
 	}
 
-	handler := api.NewHandler(repo, conv)
+	handler := api.NewHandler(repo, conv, cfg.AdminEmail)
 	router := api.NewRouter(api.RouterConfig{
 		Handler:        handler,
 		JWTVerifier:    verifier,

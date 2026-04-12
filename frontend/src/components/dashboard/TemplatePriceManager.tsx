@@ -142,16 +142,53 @@ function TemplateSection({ template }: { template: TemplateDTO }) {
   )
 }
 
-// ── Main modal ────────────────────────────────────────────────────────────────
+// ── Shared content (used by both modal and inline modes) ─────────────────────
 
-export function TemplatePriceManager() {
-  const [open, setOpen] = useState(false)
+function TemplatePriceContent() {
   const { data: templates = [], isLoading } = useTemplates()
   const [search, setSearch] = useState('')
 
   const filtered = templates.filter((t) =>
     t.name?.toLowerCase().includes(search.toLowerCase())
   )
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Input
+        placeholder="サービス名で検索..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <div className="rounded-lg border overflow-y-auto max-h-[60vh]">
+        {isLoading ? (
+          <div className="space-y-2 p-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-10 animate-pulse rounded bg-muted" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            サービスが見つかりません
+          </p>
+        ) : (
+          filtered.map((t) => <TemplateSection key={t.id} template={t} />)
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        ✏️ プラン行の鉛筆アイコンで価格を編集できます。変更は即座にDBに保存されます。
+      </p>
+    </div>
+  )
+}
+
+// ── Main: modal trigger (dashboard) or inline (admin page) ───────────────────
+
+export function TemplatePriceManager({ inline = false }: { inline?: boolean }) {
+  const [open, setOpen] = useState(false)
+
+  if (inline) {
+    return <TemplatePriceContent />
+  }
 
   return (
     <>
@@ -169,33 +206,7 @@ export function TemplatePriceManager() {
           <DialogHeader>
             <DialogTitle>テンプレート価格管理</DialogTitle>
           </DialogHeader>
-
-          <Input
-            placeholder="サービス名で検索..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="shrink-0"
-          />
-
-          <div className="flex-1 overflow-y-auto rounded-lg border">
-            {isLoading ? (
-              <div className="space-y-2 p-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-10 animate-pulse rounded bg-muted" />
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                サービスが見つかりません
-              </p>
-            ) : (
-              filtered.map((t) => <TemplateSection key={t.id} template={t} />)
-            )}
-          </div>
-
-          <p className="shrink-0 text-xs text-muted-foreground">
-            ✏️ プラン行の鉛筆アイコンで価格を編集できます。変更は即座にDBに保存されます。
-          </p>
+          <TemplatePriceContent />
         </DialogContent>
       </Dialog>
     </>
