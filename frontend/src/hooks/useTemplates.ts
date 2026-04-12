@@ -10,7 +10,6 @@ export function useTemplates() {
       const res = await fetchTemplates()
       return res.templates ?? []
     },
-    staleTime: Infinity,
   })
 }
 

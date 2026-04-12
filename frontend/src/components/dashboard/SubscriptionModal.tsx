@@ -65,9 +65,16 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   // the template picker.
   const [step, setStep] = useState<Step>(editData ? 'form' : 'template-select')
 
-  const { data: templates = [], isLoading: templatesLoading, isError: templatesError } = useTemplates()
+  const { data: templates = [], isLoading: templatesLoading, isError: templatesError, refetch: refetchTemplates } = useTemplates()
   const { data: existingSubs = [] } = useSubscriptions()
   const createMutation = useCreateSubscription()
+
+  // テンプレート選択ステップが表示されるたびに再フェッチ
+  useEffect(() => {
+    if (open && !editData) {
+      refetchTemplates()
+    }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: dbPaymentMethods = [] } = usePaymentMethods()
 
