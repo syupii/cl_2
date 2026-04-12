@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Topbar */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <span className="font-semibold text-sm sm:text-base">サブスク管理</span>
             <nav className="flex items-center gap-0.5">
               {NAV.map(({ href, label, Icon }) => {

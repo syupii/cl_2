@@ -52,11 +52,11 @@ export function SummaryCards() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-2">
-                <div className="h-4 w-24 rounded bg-muted" />
+              <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
+                <div className="h-3 w-20 rounded bg-muted" />
               </CardHeader>
-              <CardContent>
-                <div className="h-8 w-32 rounded bg-muted" />
+              <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                <div className="h-7 w-24 rounded bg-muted" />
               </CardContent>
             </Card>
           ))}
@@ -77,13 +77,13 @@ export function SummaryCards() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {/* 月間実質負担額 */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between p-3 pb-2 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
               月間実質負担額
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className={`text-xl font-bold tracking-tight sm:text-3xl ${overBudget ? 'text-destructive' : ''}`}>
               {formatJPY(totalMonthly)}
             </p>
@@ -95,13 +95,13 @@ export function SummaryCards() {
 
         {/* 年間コスト */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between p-3 pb-2 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
               年間コスト
             </CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className="text-xl font-bold tracking-tight sm:text-3xl">{formatJPY(annualCost)}</p>
             <p className="mt-1 hidden text-xs text-muted-foreground sm:block">月額 × 12 ヶ月</p>
           </CardContent>
@@ -109,13 +109,13 @@ export function SummaryCards() {
 
         {/* 有効なサブスク数 */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              有効なサブスク数
+          <CardHeader className="flex flex-row items-center justify-between p-3 pb-2 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
+              有効サブスク数
             </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CreditCard className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className="text-xl font-bold tracking-tight sm:text-3xl">{activeCount}</p>
             <p className="mt-1 hidden text-xs text-muted-foreground sm:block">ステータス: active</p>
           </CardContent>
@@ -123,16 +123,16 @@ export function SummaryCards() {
 
         {/* カテゴリ数 + 予算設定 */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between p-3 pb-2 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
               カテゴリ数
             </CardTitle>
-            <div className="flex items-center gap-1">
-              <Activity className="h-4 w-4 text-muted-foreground" />
+            <div className="flex shrink-0 items-center gap-0.5">
+              <Activity className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-5 w-5"
+                className="h-6 w-6"
                 title="月間予算を設定"
                 onClick={() => {
                   setBudgetInput(budget ? String(budget) : '')
@@ -143,7 +143,7 @@ export function SummaryCards() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className="text-xl font-bold tracking-tight sm:text-3xl">{categoryCount}</p>
             {budget !== null ? (
               <p className="mt-1 text-xs text-muted-foreground">
@@ -151,7 +151,7 @@ export function SummaryCards() {
               </p>
             ) : (
               <p className="mt-1 text-xs text-muted-foreground">
-                ⚙️ 予算未設定
+                予算未設定
               </p>
             )}
           </CardContent>
