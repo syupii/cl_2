@@ -387,7 +387,7 @@ export function SubscriptionTable() {
                         )}
                         {sub.status === 'cancelled' && (
                           <Button
-                            variant="ghost" size="icon" className="h-8 w-8 text-green-600"
+                            variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700"
                             title="有効に戻す"
                             onClick={() => handleRestore(sub)}
                             disabled={updateMutation.isPending}

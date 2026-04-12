@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, LayoutDashboard, CalendarDays, Sun, Moon } from 'lucide-react'
+import { LogOut, LayoutDashboard, CalendarDays, Sun, Moon, ShieldCheck } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { NotificationPanel } from '@/components/dashboard/NotificationPanel'
+
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase()
 
 const NAV = [
   { href: '/dashboard', label: 'ダッシュボード', Icon: LayoutDashboard },
@@ -36,6 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
   const pathname = usePathname()
   const { session, loading } = useAuth()
+  const isAdmin = !!ADMIN_EMAIL && session?.user.email?.toLowerCase() === ADMIN_EMAIL
 
   useEffect(() => {
     if (!loading && !session) {
@@ -85,9 +89,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </a>
                 )
               })}
+              {isAdmin && (
+                <a
+                  href="/dashboard/admin"
+                  className={[
+                    'flex items-center gap-1.5 rounded-md px-2 sm:px-3 py-1.5 text-xs sm:text-sm transition-colors',
+                    pathname === '/dashboard/admin'
+                      ? 'bg-accent font-medium text-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  ].join(' ')}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">管理</span>
+                </a>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-1">
+            <NotificationPanel />
             <ThemeToggle />
             <span className="hidden text-sm text-muted-foreground sm:block">
               {session.user.email}

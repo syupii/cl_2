@@ -14,6 +14,36 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const updateServicePlanPrice = `-- name: UpdateServicePlanPrice :exec
+UPDATE public.service_plans
+SET default_price = $2,
+    currency      = $3
+WHERE id = $1
+`
+
+// UpdateServicePlanPrice updates the price and currency of a service plan.
+func (q *Queries) UpdateServicePlanPrice(ctx context.Context, id uuid.UUID, price, currency string) error {
+	_, err := q.db.Exec(ctx, updateServicePlanPrice, id, price, currency)
+	return err
+}
+
+const deleteUserSubscription = `-- name: DeleteUserSubscription :exec
+DELETE FROM public.user_subscriptions
+WHERE id = $1
+  AND user_id = $2
+`
+
+type DeleteUserSubscriptionParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+// DeleteUserSubscription permanently removes a subscription row.
+func (q *Queries) DeleteUserSubscription(ctx context.Context, arg DeleteUserSubscriptionParams) error {
+	_, err := q.db.Exec(ctx, deleteUserSubscription, arg.ID, arg.UserID)
+	return err
+}
+
 const cancelUserSubscription = `-- name: CancelUserSubscription :one
 UPDATE public.user_subscriptions
 SET status = 'cancelled'

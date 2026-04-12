@@ -32,6 +32,10 @@ type Config struct {
 	// JWTAudience is the expected "aud" claim. Supabase default is "authenticated".
 	JWTAudience string
 
+	// AdminEmail is the email address of the user who can manage templates.
+	// Set via ADMIN_EMAIL env var. Leave empty to disable admin endpoints.
+	AdminEmail string
+
 	// Foreign exchange. Base currency is JPY.
 	// FXRates maps an ISO-4217 currency code to "how many JPY per 1 unit".
 	FXRates map[string]decimal.Decimal
@@ -51,6 +55,7 @@ func Load() (*Config, error) {
 		JWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
 		JWTIssuer:      os.Getenv("SUPABASE_JWT_ISSUER"),
 		JWTAudience:    getEnv("SUPABASE_JWT_AUDIENCE", "authenticated"),
+		AdminEmail:     strings.ToLower(strings.TrimSpace(os.Getenv("ADMIN_EMAIL"))),
 		FXRates:        defaultFXRates(),
 	}
 

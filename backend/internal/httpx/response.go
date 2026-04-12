@@ -47,6 +47,11 @@ func NotFound(w http.ResponseWriter, msg string) {
 	Error(w, http.StatusNotFound, msg)
 }
 
+// Forbidden is a shorthand for 403.
+func Forbidden(w http.ResponseWriter, msg string) {
+	Error(w, http.StatusForbidden, msg)
+}
+
 // Internal is a shorthand for 500. It logs the underlying error but only
 // surfaces a generic message to the client to avoid leaking DB internals.
 func Internal(w http.ResponseWriter, err error) {

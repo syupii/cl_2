@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createSubscription,
+  deleteSubscription,
   fetchSubscriptions,
   updateSubscription,
   type CreateSubscriptionRequest,
@@ -34,7 +35,17 @@ export function useUpdateSubscription() {
       updateSubscription(id, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY })
-      // Also bust summary since status/price change affects the totals.
+      qc.invalidateQueries({ queryKey: ['summary'] })
+    },
+  })
+}
+
+export function useDeleteSubscription() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteSubscription(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_KEY })
       qc.invalidateQueries({ queryKey: ['summary'] })
     },
   })

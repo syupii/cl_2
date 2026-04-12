@@ -70,10 +70,18 @@ export function updateSubscription(id: string, body: UpdateSubscriptionRequest):
   return request('PUT', `/subscriptions/${id}`, body)
 }
 
+export function deleteSubscription(id: string): Promise<void> {
+  return request('DELETE', `/subscriptions/${id}`)
+}
+
 // ── Templates ────────────────────────────────────────────────────────────────
 
 export function fetchTemplates(): Promise<{ templates: TemplateDTO[] }> {
   return request('GET', '/templates')
+}
+
+export function updatePlanPrice(id: string, defaultPrice: string, currency: string): Promise<void> {
+  return request('PUT', `/templates/plans/${id}`, { default_price: defaultPrice, currency })
 }
 
 // ── Summary ──────────────────────────────────────────────────────────────────

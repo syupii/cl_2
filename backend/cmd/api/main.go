@@ -35,6 +35,7 @@ import (
 	"github.com/syupii/cl_2/backend/internal/config"
 	"github.com/syupii/cl_2/backend/internal/money"
 	"github.com/syupii/cl_2/backend/internal/repository"
+	"github.com/syupii/cl_2/backend/internal/seed"
 )
 
 func main() {
@@ -67,12 +68,17 @@ func run() error {
 	repo := repository.New(pool)
 	conv := money.NewConverter(cfg.FXRates)
 
+	// Upsert master template/plan data so prices are always up to date.
+	if err := seed.Run(context.Background(), pool); err != nil {
+		log.Printf("warn: seed failed (non-fatal): %v", err)
+	}
+
 	verifier, err := auth.NewVerifier(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTAudience)
 	if err != nil {
 		return err
 	}
 
-	handler := api.NewHandler(repo, conv)
+	handler := api.NewHandler(repo, conv, cfg.AdminEmail)
 	router := api.NewRouter(api.RouterConfig{
 		Handler:        handler,
 		JWTVerifier:    verifier,
