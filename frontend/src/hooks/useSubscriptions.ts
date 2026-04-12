@@ -46,16 +46,16 @@ export function useUpdateSubscription() {
             ? {
                 ...s,
                 service_name: body.service_name,
-                plan_name: body.plan_name ?? null,
+                plan_name: body.plan_name,
                 price: body.price,
                 currency: body.currency,
                 billing_cycle: body.billing_cycle,
                 next_billing_date: body.next_billing_date,
-                category: body.category ?? null,
-                payment_method: body.payment_method ?? null,
-                notes: body.notes ?? null,
+                category: body.category,
+                payment_method: body.payment_method,
+                notes: body.notes,
                 status: body.status ?? s.status,
-              }
+              } as SubscriptionDTO
             : s
         )
       )
