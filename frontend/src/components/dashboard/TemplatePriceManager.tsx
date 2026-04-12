@@ -68,7 +68,7 @@ function PlanRow({ plan }: { plan: PlanDTO }) {
             min={0}
             autoFocus
           />
-          <Select value={currency} onValueChange={setCurrency}>
+          <Select value={currency} onValueChange={(v) => { if (v) setCurrency(v) }}>
             <SelectTrigger className="h-7 w-20 text-sm">
               <SelectValue />
             </SelectTrigger>
