@@ -14,6 +14,23 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const deleteUserSubscription = `-- name: DeleteUserSubscription :exec
+DELETE FROM public.user_subscriptions
+WHERE id = $1
+  AND user_id = $2
+`
+
+type DeleteUserSubscriptionParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+// DeleteUserSubscription permanently removes a subscription row.
+func (q *Queries) DeleteUserSubscription(ctx context.Context, arg DeleteUserSubscriptionParams) error {
+	_, err := q.db.Exec(ctx, deleteUserSubscription, arg.ID, arg.UserID)
+	return err
+}
+
 const cancelUserSubscription = `-- name: CancelUserSubscription :one
 UPDATE public.user_subscriptions
 SET status = 'cancelled'

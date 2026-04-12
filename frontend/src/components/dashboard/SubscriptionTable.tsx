@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Pencil, Ban, Download, Search, CalendarCheck, FileText } from 'lucide-react'
+import { Pencil, Ban, Download, Search, CalendarCheck, FileText, Trash2, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useSubscriptions, useUpdateSubscription } from '@/hooks/useSubscriptions'
+import { useSubscriptions, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
 import type { SubscriptionDTO } from '@/lib/api-client'
 import { SubscriptionModal } from './SubscriptionModal'
 
@@ -34,6 +34,7 @@ type TabValue = 'active' | 'cancelled' | 'all'
 export function SubscriptionTable() {
   const { data: subscriptions = [], isLoading } = useSubscriptions()
   const updateMutation = useUpdateSubscription()
+  const deleteMutation = useDeleteSubscription()
   const [editTarget, setEditTarget] = useState<SubscriptionDTO | null>(null)
   const [tab, setTab] = useState<TabValue>('active')
   const [search, setSearch] = useState('')
@@ -106,6 +107,39 @@ export function SubscriptionTable() {
       toast.success('解約済みに変更しました')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '更新に失敗しました')
+    }
+  }
+
+  async function handleRestore(sub: SubscriptionDTO) {
+    try {
+      await updateMutation.mutateAsync({
+        id: sub.id!,
+        body: {
+          service_name: sub.service_name,
+          plan_name: sub.plan_name ?? undefined,
+          price: sub.price,
+          currency: sub.currency,
+          billing_cycle: sub.billing_cycle,
+          next_billing_date: sub.next_billing_date,
+          category: sub.category ?? undefined,
+          payment_method: sub.payment_method ?? undefined,
+          notes: sub.notes ?? undefined,
+          status: 'active',
+        },
+      })
+      toast.success('有効に戻しました')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '更新に失敗しました')
+    }
+  }
+
+  async function handleDelete(sub: SubscriptionDTO) {
+    if (!confirm(`「${sub.service_name}」を完全に削除しますか？この操作は元に戻せません。`)) return
+    try {
+      await deleteMutation.mutateAsync(sub.id!)
+      toast.success('削除しました')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '削除に失敗しました')
     }
   }
 
@@ -245,6 +279,7 @@ export function SubscriptionTable() {
                       </Button>
                       <Button
                         variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                        title="解約済みにする"
                         onClick={() => handleCancel(sub)}
                         disabled={updateMutation.isPending}
                       >
@@ -252,6 +287,24 @@ export function SubscriptionTable() {
                       </Button>
                     </>
                   )}
+                  {sub.status === 'cancelled' && (
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7 text-green-600"
+                      title="有効に戻す"
+                      onClick={() => handleRestore(sub)}
+                      disabled={updateMutation.isPending}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                    title="完全に削除"
+                    onClick={() => handleDelete(sub)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -308,6 +361,7 @@ export function SubscriptionTable() {
                             </Button>
                             <Button
                               variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                              title="解約済みにする"
                               onClick={() => handleCancel(sub)}
                               disabled={updateMutation.isPending}
                             >
@@ -315,6 +369,24 @@ export function SubscriptionTable() {
                             </Button>
                           </>
                         )}
+                        {sub.status === 'cancelled' && (
+                          <Button
+                            variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700"
+                            title="有効に戻す"
+                            onClick={() => handleRestore(sub)}
+                            disabled={updateMutation.isPending}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                          title="完全に削除"
+                          onClick={() => handleDelete(sub)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>

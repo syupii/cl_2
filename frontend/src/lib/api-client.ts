@@ -70,6 +70,10 @@ export function updateSubscription(id: string, body: UpdateSubscriptionRequest):
   return request('PUT', `/subscriptions/${id}`, body)
 }
 
+export function deleteSubscription(id: string): Promise<void> {
+  return request('DELETE', `/subscriptions/${id}`)
+}
+
 // ── Templates ────────────────────────────────────────────────────────────────
 
 export function fetchTemplates(): Promise<{ templates: TemplateDTO[] }> {

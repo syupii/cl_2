@@ -15,6 +15,8 @@ type Querier interface {
 	ListPaymentMethods(ctx context.Context, userID uuid.UUID) ([]PaymentMethod, error)
 	CreatePaymentMethod(ctx context.Context, userID uuid.UUID, name string) (PaymentMethod, error)
 	DeletePaymentMethod(ctx context.Context, id, userID uuid.UUID) error
+	// Permanently delete a subscription row (hard delete).
+	DeleteUserSubscription(ctx context.Context, arg DeleteUserSubscriptionParams) error
 	// Convenience mutation for the "cancel" action in the UI. Equivalent to
 	// UpdateUserSubscription with status='cancelled', but cheaper for the client.
 	CancelUserSubscription(ctx context.Context, arg CancelUserSubscriptionParams) (UserSubscription, error)

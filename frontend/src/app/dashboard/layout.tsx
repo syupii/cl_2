@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { NotificationPanel } from '@/components/dashboard/NotificationPanel'
 
 const NAV = [
   { href: '/dashboard', label: 'ダッシュボード', Icon: LayoutDashboard },
@@ -88,6 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
           <div className="flex items-center gap-1">
+            <NotificationPanel />
             <ThemeToggle />
             <span className="hidden text-sm text-muted-foreground sm:block">
               {session.user.email}

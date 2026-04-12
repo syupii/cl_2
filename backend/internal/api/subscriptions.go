@@ -190,6 +190,37 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	httpx.OK(w, http.StatusOK, dto)
 }
 
+// DeleteSubscription godoc
+//
+// @Summary      Permanently delete a subscription
+// @Tags         subscriptions
+// @Security     BearerAuth
+// @Param        id   path      string  true  "subscription id (UUID)"
+// @Success      204  {object}  httpx.Response
+// @Failure      400  {object}  httpx.Response
+// @Failure      401  {object}  httpx.Response
+// @Failure      500  {object}  httpx.Response
+// @Router       /subscriptions/{id} [delete]
+func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
+	userID := auth.MustUserID(r.Context())
+
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpx.BadRequest(w, "id must be a UUID")
+		return
+	}
+
+	if err := h.repo.DeleteUserSubscription(r.Context(), repository.DeleteUserSubscriptionParams{
+		ID: id, UserID: userID,
+	}); err != nil {
+		httpx.Internal(w, err)
+		return
+	}
+
+	httpx.OK(w, http.StatusNoContent, nil)
+}
+
 // decodeJSON decodes the request body with strict field checking so typos in
 // the JSON body surface as 400 rather than silently being ignored.
 func decodeJSON(r *http.Request, dst any) error {
