@@ -1,15 +1,14 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-
-const CATS_KEY = 'predefined_categories'
+import { STORAGE_KEYS } from '@/lib/constants'
 
 export function useCategories() {
   const [categories, setCategories] = useState<string[]>([])
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(CATS_KEY)
+      const saved = localStorage.getItem(STORAGE_KEYS.PREDEFINED_CATEGORIES)
       if (saved) setCategories(JSON.parse(saved) as string[])
     } catch {
       // ignore parse errors
@@ -18,7 +17,7 @@ export function useCategories() {
 
   const persist = useCallback((next: string[]) => {
     setCategories(next)
-    localStorage.setItem(CATS_KEY, JSON.stringify(next))
+    localStorage.setItem(STORAGE_KEYS.PREDEFINED_CATEGORIES, JSON.stringify(next))
   }, [])
 
   const addCategory = useCallback(

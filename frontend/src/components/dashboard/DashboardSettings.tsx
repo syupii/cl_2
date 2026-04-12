@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-const STORAGE_KEY = 'dashboard_widgets'
+import { useClickOutside } from '@/hooks/useClickOutside'
+import { STORAGE_KEYS } from '@/lib/constants'
 
 export interface WidgetConfig {
   alerts: boolean
@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: WidgetConfig = {
 export function loadWidgetConfig(): WidgetConfig {
   if (typeof window === 'undefined') return DEFAULT_CONFIG
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEYS.DASHBOARD_WIDGETS)
     if (!raw) return DEFAULT_CONFIG
     return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }
   } catch {
@@ -44,21 +44,12 @@ export function DashboardSettings({ config, onChange }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  useClickOutside(ref, () => setOpen(false), open)
 
   function toggle(key: keyof WidgetConfig) {
     const next = { ...config, [key]: !config[key] }
     onChange(next)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    localStorage.setItem(STORAGE_KEYS.DASHBOARD_WIDGETS, JSON.stringify(next))
   }
 
   return (

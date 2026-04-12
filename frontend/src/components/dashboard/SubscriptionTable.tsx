@@ -8,16 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSubscriptions, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
 import type { SubscriptionDTO } from '@/lib/api-client'
+import { formatJPY } from '@/lib/utils'
 import { SubscriptionModal } from './SubscriptionModal'
-
-function formatJPY(value: string | undefined): string {
-  const num = parseInt(value ?? '0', 10)
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(isNaN(num) ? 0 : num)
-}
 
 function advanceDate(dateStr: string, cycle: string): string {
   const d = new Date(dateStr)

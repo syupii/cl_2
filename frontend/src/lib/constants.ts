@@ -1,0 +1,8 @@
+/** localStorage keys used across the app. */
+export const STORAGE_KEYS = {
+  MONTHLY_BUDGET: 'monthly_budget',
+  BILLING_ALERT_DAYS: 'billing_alert_days',
+  NOTIF_DISMISSED: 'notif_dismissed',
+  DASHBOARD_WIDGETS: 'dashboard_widgets',
+  PREDEFINED_CATEGORIES: 'predefined_categories',
+} as const

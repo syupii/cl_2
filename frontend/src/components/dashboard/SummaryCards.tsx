@@ -6,16 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSummary } from '@/hooks/useSummary'
+import { formatJPY } from '@/lib/utils'
+import { STORAGE_KEYS } from '@/lib/constants'
 
-function formatJPY(value: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(isNaN(value) ? 0 : value)
-}
-
-const BUDGET_KEY = 'monthly_budget'
+const BUDGET_KEY = STORAGE_KEYS.MONTHLY_BUDGET
 
 export function SummaryCards() {
   const { data, isLoading } = useSummary()
