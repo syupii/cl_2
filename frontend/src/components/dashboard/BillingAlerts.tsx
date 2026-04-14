@@ -50,6 +50,7 @@ export function BillingAlerts() {
   const upcoming = subs
     .filter((s) => {
       if (s.status !== 'active') return false
+      if (isExpense(s)) return false
       const d = daysUntil(s.next_billing_date)
       return d !== null && d <= warnDays
     })
@@ -151,9 +152,7 @@ export function BillingAlerts() {
                   <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="truncate font-medium text-amber-900 dark:text-amber-200">
                       {s.service_name}
-                      {isExpense(s) ? (
-                        <span className="ml-1 text-xs font-normal text-amber-700 dark:text-amber-400">支出</span>
-                      ) : s.plan_name && s.plan_name !== EXPENSE_TAG ? (
+                      {s.plan_name && s.plan_name !== EXPENSE_TAG ? (
                         <span className="ml-1 text-xs font-normal text-amber-700 dark:text-amber-400">
                           ({s.plan_name})
                         </span>
