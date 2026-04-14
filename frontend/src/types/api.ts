@@ -174,7 +174,7 @@ export interface definitions {
      * @example monthly
      * @enum {string}
      */
-    billing_cycle?: "monthly" | "yearly";
+    billing_cycle?: "monthly" | "yearly" | "once";
     /** @example Entertainment */
     category?: string;
     /** @example JPY */
@@ -209,7 +209,7 @@ export interface definitions {
      * @example monthly
      * @enum {string}
      */
-    billing_cycle?: "monthly" | "yearly";
+    billing_cycle?: "monthly" | "yearly" | "once";
     /** @example JPY */
     currency?: string;
     /** @example 2290 */
@@ -224,7 +224,7 @@ export interface definitions {
      * @example monthly
      * @enum {string}
      */
-    billing_cycle?: "monthly" | "yearly";
+    billing_cycle?: "monthly" | "yearly" | "once";
     /** @example Entertainment */
     category?: string;
     /** @example 2026-04-01T10:00:00Z */
@@ -283,7 +283,7 @@ export interface definitions {
      * @example monthly
      * @enum {string}
      */
-    billing_cycle?: "monthly" | "yearly";
+    billing_cycle?: "monthly" | "yearly" | "once";
     /** @example Entertainment */
     category?: string;
     /** @example JPY */

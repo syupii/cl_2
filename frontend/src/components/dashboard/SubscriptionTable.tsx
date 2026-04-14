@@ -15,6 +15,8 @@ function advanceDate(dateStr: string, cycle: string): string {
   const d = new Date(dateStr)
   if (cycle === 'yearly') {
     d.setFullYear(d.getFullYear() + 1)
+  } else if (cycle === 'once') {
+    return dateStr // 一回払いは日付を進めない
   } else {
     d.setMonth(d.getMonth() + 1)
   }
@@ -97,11 +99,13 @@ export function SubscriptionTable() {
     }
   }
 
+  const isBulkPending = updateMutation.isPending || deleteMutation.isPending
+
   async function handleBulkCancel() {
     const targets = filtered.filter((s) => selectedIds.has(s.id!) && s.status === 'active')
     if (targets.length === 0) return
     if (!confirm(`選択した ${targets.length} 件を解約済みにしますか？`)) return
-    await Promise.all(targets.map((sub) =>
+    const results = await Promise.allSettled(targets.map((sub) =>
       updateMutation.mutateAsync({
         id: sub.id!,
         body: {
@@ -118,15 +122,25 @@ export function SubscriptionTable() {
         },
       })
     ))
-    toast.success(`${targets.length} 件を解約済みにしました`)
+    const failed = results.filter((r) => r.status === 'rejected').length
+    if (failed > 0) {
+      toast.error(`${failed} 件の解約処理に失敗しました`)
+    } else {
+      toast.success(`${targets.length} 件を解約済みにしました`)
+    }
     setSelectedIds(new Set())
   }
 
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return
     if (!confirm(`選択した ${selectedIds.size} 件を完全に削除しますか？この操作は取り消せません。`)) return
-    await Promise.all([...selectedIds].map((id) => deleteMutation.mutateAsync(id)))
-    toast.success(`${selectedIds.size} 件を削除しました`)
+    const results = await Promise.allSettled([...selectedIds].map((id) => deleteMutation.mutateAsync(id)))
+    const failed = results.filter((r) => r.status === 'rejected').length
+    if (failed > 0) {
+      toast.error(`${failed} 件の削除に失敗しました`)
+    } else {
+      toast.success(`${selectedIds.size} 件を削除しました`)
+    }
     setSelectedIds(new Set())
   }
 
@@ -282,14 +296,14 @@ export function SubscriptionTable() {
             <Button
               size="sm" variant="outline" className="h-7 text-xs"
               onClick={handleBulkCancel}
-              disabled={updateMutation.isPending}
+              disabled={isBulkPending}
             >
               解約済みに変更
             </Button>
             <Button
               size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive"
               onClick={handleBulkDelete}
-              disabled={deleteMutation.isPending}
+              disabled={isBulkPending}
             >
               削除
             </Button>
@@ -366,10 +380,11 @@ export function SubscriptionTable() {
                   <div className="flex items-start gap-2.5 min-w-0 flex-1">
                     <input
                       type="checkbox"
-                      className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-muted-foreground accent-primary"
+                      className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-muted-foreground accent-primary disabled:cursor-not-allowed disabled:opacity-50"
                       checked={selectedIds.has(sub.id!)}
                       onChange={() => toggleSelect(sub.id!)}
                       onClick={(e) => e.stopPropagation()}
+                      disabled={isBulkPending}
                     />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -457,9 +472,10 @@ export function SubscriptionTable() {
                   <th className="w-10 px-3 py-3 text-left font-medium">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 cursor-pointer rounded border-muted-foreground accent-primary"
+                      className="h-4 w-4 cursor-pointer rounded border-muted-foreground accent-primary disabled:cursor-not-allowed disabled:opacity-50"
                       checked={isAllSelected}
                       onChange={toggleSelectAll}
+                      disabled={isBulkPending}
                     />
                   </th>
                   <th className="px-4 py-3 text-left font-medium">
@@ -507,9 +523,10 @@ export function SubscriptionTable() {
                     <td className="w-10 px-3 py-3">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 cursor-pointer rounded border-muted-foreground accent-primary"
+                        className="h-4 w-4 cursor-pointer rounded border-muted-foreground accent-primary disabled:cursor-not-allowed disabled:opacity-50"
                         checked={selectedIds.has(sub.id!)}
                         onChange={() => toggleSelect(sub.id!)}
+                        disabled={isBulkPending}
                       />
                     </td>
                     <td className="px-4 py-3">

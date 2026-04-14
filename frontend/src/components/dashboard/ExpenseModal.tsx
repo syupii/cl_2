@@ -34,7 +34,7 @@ const PRESET_CATEGORIES = ['住居費', '光熱費', '食費', '交通費', '保
 const schema = z.object({
   service_name: z.string().min(1, '支出名を入力してください'),
   price: z.string().min(1, '金額を入力してください'),
-  billing_cycle: z.enum(['monthly', 'yearly']),
+  billing_cycle: z.enum(['monthly', 'yearly', 'once']),
   next_billing_date: z.string().min(1, '支払い予定日を入力してください'),
   category: z.string().optional(),
   notes: z.string().optional(),
@@ -66,7 +66,7 @@ export function ExpenseModal({ open, onOpenChange, editData }: Props) {
       ? {
           service_name: editData.service_name ?? '',
           price: editData.price ?? '',
-          billing_cycle: editData.billing_cycle as 'monthly' | 'yearly' ?? 'monthly',
+          billing_cycle: (editData.billing_cycle ?? 'monthly') as 'monthly' | 'yearly' | 'once',
           next_billing_date: editData.next_billing_date ?? '',
           category: editData.category ?? '',
           notes: editData.notes ?? '',
@@ -174,7 +174,7 @@ export function ExpenseModal({ open, onOpenChange, editData }: Props) {
             <Label>支払い周期</Label>
             <Select
               defaultValue={watch('billing_cycle') ?? 'monthly'}
-              onValueChange={(v) => { if (v) setValue('billing_cycle', v as 'monthly' | 'yearly') }}
+              onValueChange={(v) => { if (v) setValue('billing_cycle', v as 'monthly' | 'yearly' | 'once') }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -182,6 +182,7 @@ export function ExpenseModal({ open, onOpenChange, editData }: Props) {
               <SelectContent>
                 <SelectItem value="monthly">毎月払い</SelectItem>
                 <SelectItem value="yearly">年払い（月額÷12で計算）</SelectItem>
+                <SelectItem value="once">一回払い（月次集計に含めない）</SelectItem>
               </SelectContent>
             </Select>
           </div>

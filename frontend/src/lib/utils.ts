@@ -19,6 +19,11 @@ export function isSubscription(sub: SubscriptionDTO): boolean {
   return sub.plan_name !== EXPENSE_TAG
 }
 
+/** Returns true if the item is a one-time (non-recurring) expense. */
+export function isOnceExpense(sub: SubscriptionDTO): boolean {
+  return sub.billing_cycle === 'once'
+}
+
 /** Format a number (or numeric string) as Japanese yen. */
 export function formatJPY(value: number | string | undefined): string {
   const num = typeof value === 'string' ? parseInt(value, 10) : (value ?? 0)

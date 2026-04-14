@@ -48,6 +48,13 @@ async function request<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 
+  // 401 Unauthorized: セッション切れ → サインアウトしてログイン画面へ
+  if (res.status === 401) {
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+    throw new Error('Session expired')
+  }
+
   // 204 No Content や空ボディのレスポンスは JSON パースをスキップ
   const contentType = res.headers.get('content-type') ?? ''
   if (res.status === 204 || !contentType.includes('application/json')) {
