@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useSubscriptions, useDeleteSubscription, useUpdateSubscription } from '@/hooks/useSubscriptions'
-import { formatJPY, isExpense, isOnceExpense } from '@/lib/utils'
+import { formatJPY, isExpense } from '@/lib/utils'
 import { loadBudget } from '@/lib/localStorage'
 import { ExpenseModal } from './ExpenseModal'
 import type { SubscriptionDTO } from '@/lib/api-client'
@@ -30,9 +30,9 @@ export function BudgetView() {
   const activeExpenses = useMemo(() => expenses.filter((s) => s.status === 'active'), [expenses])
   const cancelledExpenses = useMemo(() => expenses.filter((s) => s.status === 'cancelled'), [expenses])
 
-  // 毎月・年払い（recurring）と一回払い（once）に分割
-  const recurringExpenses = useMemo(() => activeExpenses.filter((s) => !isOnceExpense(s)), [activeExpenses])
-  const onceExpenses = useMemo(() => activeExpenses.filter(isOnceExpense), [activeExpenses])
+  // 毎月払いのみ recurring、年払い・一回払いはすべて非定期扱い
+  const recurringExpenses = useMemo(() => activeExpenses.filter((s) => s.billing_cycle === 'monthly'), [activeExpenses])
+  const onceExpenses = useMemo(() => activeExpenses.filter((s) => s.billing_cycle !== 'monthly'), [activeExpenses])
 
   // 月額合計（recurring のみ）
   const totalMonthly = useMemo(
@@ -262,12 +262,12 @@ export function BudgetView() {
         )}
       </div>
 
-      {/* 一回払いの支出 */}
+      {/* 年払い・一回払いの支出 */}
       {onceExpenses.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-muted-foreground">
-              一時的な支出（{onceExpenses.length}件）
+              年払い・一回払い（{onceExpenses.length}件）
             </h3>
             <span className="text-sm font-medium">{formatJPY(totalOnce)}</span>
           </div>
@@ -279,7 +279,6 @@ export function BudgetView() {
                 onEdit={() => { setEditTarget(sub); setModalOpen(true) }}
                 onDelete={() => handleDelete(sub)}
                 isPending={deleteMutation.isPending || updateMutation.isPending}
-                isOnce
               />
             ))}
           </div>
@@ -325,10 +324,12 @@ interface ExpenseCardProps {
   onDelete: () => void
   onRestore?: () => void
   isPending: boolean
-  isOnce?: boolean
 }
 
-function ExpenseCard({ sub, onEdit, onDelete, onRestore, isPending, isOnce }: ExpenseCardProps) {
+function ExpenseCard({ sub, onEdit, onDelete, onRestore, isPending }: ExpenseCardProps) {
+  const isMonthly = sub.billing_cycle === 'monthly'
+  const cycleLabel = sub.billing_cycle === 'once' ? '一回払い' : sub.billing_cycle === 'yearly' ? '年払い' : '毎月'
+
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3">
       <div className="min-w-0 flex-1">
@@ -337,21 +338,21 @@ function ExpenseCard({ sub, onEdit, onDelete, onRestore, isPending, isOnce }: Ex
           {sub.category && (
             <Badge variant="outline" className="shrink-0 text-xs">{sub.category}</Badge>
           )}
-          {isOnce && (
-            <Badge variant="secondary" className="shrink-0 text-xs">一回払い</Badge>
+          {!isMonthly && (
+            <Badge variant="secondary" className="shrink-0 text-xs">{cycleLabel}</Badge>
           )}
         </div>
         {sub.notes && (
           <p className="mt-0.5 text-xs text-muted-foreground truncate">{sub.notes}</p>
         )}
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {isOnce ? '一回払い' : sub.billing_cycle === 'yearly' ? '年払い' : '毎月'} · 支払日: {sub.next_billing_date}
+          {cycleLabel} · 支払日: {sub.next_billing_date}
         </p>
       </div>
       <div className="shrink-0 text-right">
         <p className="font-semibold">
-          {isOnce ? formatJPY(sub.price) : formatJPY(sub.monthly_cost_jpy)}
-          {!isOnce && <span className="text-xs font-normal text-muted-foreground">/月</span>}
+          {isMonthly ? formatJPY(sub.monthly_cost_jpy) : formatJPY(sub.price)}
+          {isMonthly && <span className="text-xs font-normal text-muted-foreground">/月</span>}
         </p>
         <div className="mt-1 flex items-center justify-end gap-0.5">
           {onRestore && (
