@@ -77,8 +77,19 @@ export function ExpenseModal({ open, onOpenChange, editData }: Props) {
   })
 
   useEffect(() => {
-    if (!open) reset()
-  }, [open, reset])
+    if (open && editData) {
+      reset({
+        service_name: editData.service_name ?? '',
+        price: editData.price ?? '',
+        billing_cycle: (editData.billing_cycle ?? 'monthly') as 'monthly' | 'yearly' | 'once',
+        next_billing_date: editData.next_billing_date ?? '',
+        category: editData.category ?? '',
+        notes: editData.notes ?? '',
+      })
+    } else if (!open) {
+      reset()
+    }
+  }, [open, editData, reset])
 
   // localStorage から事前登録カテゴリを読み込み、プリセットとマージ
   const [allCategories, setAllCategories] = useState<string[]>(PRESET_CATEGORIES)
@@ -173,7 +184,7 @@ export function ExpenseModal({ open, onOpenChange, editData }: Props) {
           <div className="space-y-1">
             <Label>支払い周期</Label>
             <Select
-              defaultValue={watch('billing_cycle') ?? 'monthly'}
+              value={watch('billing_cycle') ?? 'monthly'}
               onValueChange={(v) => { if (v) setValue('billing_cycle', v as 'monthly' | 'yearly' | 'once') }}
             >
               <SelectTrigger>
