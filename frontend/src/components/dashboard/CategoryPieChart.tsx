@@ -1,22 +1,10 @@
 'use client'
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { useState } from 'react'
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSummary } from '@/hooks/useSummary'
 import { formatJPY } from '@/lib/utils'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function PieTooltip({ active, payload }: any) {
-  if (!active || !payload?.length) return null
-  const name: string = payload[0]?.name ?? ''
-  const value: number = Number(payload[0]?.value ?? 0)
-  return (
-    <div className="rounded-lg border bg-popover px-3 py-2 shadow-md">
-      <p className="text-xs font-medium text-popover-foreground">{name}</p>
-      <p className="text-sm font-bold text-popover-foreground">{formatJPY(value)}</p>
-    </div>
-  )
-}
 
 const COLORS = [
   '#6366f1', // indigo
@@ -33,6 +21,7 @@ const COLORS = [
 
 export function CategoryPieChart() {
   const { data, isLoading } = useSummary()
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const chartData = (data?.category_breakdown ?? []).map((cat) => ({
     name: cat.category ?? '未分類',
@@ -41,6 +30,7 @@ export function CategoryPieChart() {
   }))
 
   const total = chartData.reduce((sum, d) => sum + d.value, 0)
+  const hovered = hoveredIndex !== null ? chartData[hoveredIndex] : null
 
   if (isLoading) {
     return (
@@ -88,19 +78,39 @@ export function CategoryPieChart() {
                   paddingAngle={2}
                   dataKey="value"
                   strokeWidth={0}
+                  onMouseEnter={(_, index) => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
                 >
                   {chartData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell
+                      key={i}
+                      fill={COLORS[i % COLORS.length]}
+                      opacity={hoveredIndex === null || hoveredIndex === i ? 1 : 0.45}
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                    />
                   ))}
                 </Pie>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <Tooltip content={(props: any) => <PieTooltip {...props} />} />
               </PieChart>
             </ResponsiveContainer>
-            {/* Center total */}
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[10px] text-muted-foreground">合計</span>
-              <span className="text-sm font-bold leading-tight">{formatJPY(total)}</span>
+
+            {/* Center display: total or hovered item */}
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-2 text-center">
+              {hovered ? (
+                <>
+                  <span className="w-full truncate text-[10px] leading-tight text-muted-foreground">
+                    {hovered.name}
+                  </span>
+                  <span className="text-sm font-bold leading-tight">{formatJPY(hovered.value)}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {total > 0 ? Math.round((hovered.value / total) * 100) : 0}%
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[10px] text-muted-foreground">合計</span>
+                  <span className="text-sm font-bold leading-tight">{formatJPY(total)}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -108,8 +118,14 @@ export function CategoryPieChart() {
           <div className="min-w-0 flex-1 space-y-1.5">
             {chartData.map((d, i) => {
               const pct = total > 0 ? Math.round((d.value / total) * 100) : 0
+              const isHovered = hoveredIndex === i
               return (
-                <div key={d.name} className="flex items-center gap-2 text-sm">
+                <div
+                  key={d.name}
+                  className={`flex items-center gap-2 text-sm transition-opacity ${hoveredIndex !== null && !isHovered ? 'opacity-40' : ''}`}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ background: COLORS[i % COLORS.length] }}
