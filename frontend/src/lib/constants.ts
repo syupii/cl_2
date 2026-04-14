@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   NOTIF_DISMISSED: 'notif_dismissed',
   DASHBOARD_WIDGETS: 'dashboard_widgets',
   PREDEFINED_CATEGORIES: 'predefined_categories',
+  BUDGET_CATEGORIES: 'budget_categories',
 } as const

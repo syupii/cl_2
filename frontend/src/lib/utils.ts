@@ -1,8 +1,22 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { SubscriptionDTO } from '@/lib/api-client'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/** Sentinel value stored in plan_name to mark a generic expense (non-subscription). */
+export const EXPENSE_TAG = '__expense__'
+
+/** Returns true if the item is a generic household expense (not a subscription). */
+export function isExpense(sub: SubscriptionDTO): boolean {
+  return sub.plan_name === EXPENSE_TAG
+}
+
+/** Returns true if the item is a subscription (not a generic expense). */
+export function isSubscription(sub: SubscriptionDTO): boolean {
+  return sub.plan_name !== EXPENSE_TAG
 }
 
 /** Format a number (or numeric string) as Japanese yen. */

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, LayoutDashboard, CalendarDays, Sun, Moon, ShieldCheck } from 'lucide-react'
+import { LogOut, LayoutDashboard, CalendarDays, Sun, Moon, ShieldCheck, Wallet } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase()
 
 const NAV = [
   { href: '/dashboard', label: 'ダッシュボード', Icon: LayoutDashboard },
+  { href: '/dashboard/budget', label: '月次予算', Icon: Wallet },
   { href: '/dashboard/calendar', label: 'カレンダー', Icon: CalendarDays },
 ]
 
@@ -69,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2 sm:gap-4">
-            <span className="font-semibold text-sm sm:text-base">サブスク管理</span>
+            <span className="font-semibold text-sm sm:text-base">家計・サブスク管理</span>
             <nav className="flex items-center gap-0.5">
               {NAV.map(({ href, label, Icon }) => {
                 const active = pathname === href
@@ -126,7 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <Separator />
       <footer className="py-4 text-center text-xs text-muted-foreground">
-        サブスク管理ダッシュボード
+        家計・サブスク管理ダッシュボード
       </footer>
     </div>
   )

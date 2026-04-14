@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSubscriptions, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
 import type { SubscriptionDTO } from '@/lib/api-client'
-import { formatJPY } from '@/lib/utils'
+import { formatJPY, isSubscription } from '@/lib/utils'
 import { SubscriptionModal } from './SubscriptionModal'
 
 function advanceDate(dateStr: string, cycle: string): string {
@@ -53,6 +53,8 @@ export function SubscriptionTable() {
 
   const filtered = useMemo(() => {
     const arr = subscriptions.filter((sub) => {
+      // サブスク専用テーブルなので支出（__expense__）は除外
+      if (!isSubscription(sub)) return false
       if (tab === 'active' && sub.status !== 'active') return false
       if (tab === 'cancelled' && sub.status !== 'cancelled') return false
       if (search && !sub.service_name?.toLowerCase().includes(search.toLowerCase())) return false
@@ -72,8 +74,9 @@ export function SubscriptionTable() {
     })
   }, [subscriptions, tab, search, categoryFilter, sortBy, sortDir])
 
-  const activeCount = subscriptions.filter((s) => s.status === 'active').length
-  const cancelledCount = subscriptions.filter((s) => s.status === 'cancelled').length
+  const subs = useMemo(() => subscriptions.filter(isSubscription), [subscriptions])
+  const activeCount = subs.filter((s) => s.status === 'active').length
+  const cancelledCount = subs.filter((s) => s.status === 'cancelled').length
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -129,7 +132,7 @@ export function SubscriptionTable() {
 
   function exportCSV() {
     const headers = ['サービス名', 'プラン名', '料金', '通貨', '支払い周期', '次回請求日', 'カテゴリ', '決済手段', 'メモ', 'ステータス', '月額負担(JPY)']
-    const rows = subscriptions.map((sub) => [
+    const rows = subs.map((sub) => [
       sub.service_name ?? '',
       sub.plan_name ?? '',
       sub.price ?? '',
@@ -257,7 +260,7 @@ export function SubscriptionTable() {
           {([
             ['active', `有効 (${activeCount})`],
             ['cancelled', `解約 (${cancelledCount})`],
-            ['all', `全て (${subscriptions.length})`],
+            ['all', `全て (${subs.length})`],
           ] as [TabValue, string][]).map(([value, label]) => (
             <button
               key={value}
