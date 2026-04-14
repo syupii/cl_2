@@ -68,6 +68,13 @@ func buildSummary(
 	}
 
 	for _, s := range active {
+		// 支出（plan_name = '__expense__'）はサブスク集計から除外する。
+		// 支出は BudgetView で独立して管理されるため、ダッシュボードの
+		// カテゴリ円グラフやトレンドバーにはサブスクのみを含める。
+		if s.PlanName.Valid && s.PlanName.String == "__expense__" {
+			continue
+		}
+
 		monthlyJPY, err := conv.MonthlyJPY(s.Price, s.Currency, s.BillingCycle)
 		if err != nil {
 			return SummaryResponse{}, err

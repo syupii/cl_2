@@ -45,15 +45,21 @@ export function BudgetView() {
     [onceExpenses]
   )
 
-  // カテゴリ別集計（recurring のみ）
+  // カテゴリ別集計（全アクティブ支出を実際の金額で集計）
   const categoryBreakdown = useMemo(() => {
     const map = new Map<string, number>()
-    for (const s of recurringExpenses) {
+    for (const s of activeExpenses) {
       const cat = s.category ?? '未分類'
-      map.set(cat, (map.get(cat) ?? 0) + parseInt(s.monthly_cost_jpy ?? '0', 10))
+      map.set(cat, (map.get(cat) ?? 0) + parseInt(s.price ?? '0', 10))
     }
     return [...map.entries()].sort((a, b) => b[1] - a[1])
-  }, [recurringExpenses])
+  }, [activeExpenses])
+
+  // カテゴリ別パーセント計算用の合計（実際の金額ベース）
+  const categoryTotal = useMemo(
+    () => categoryBreakdown.reduce((sum, [, v]) => sum + v, 0),
+    [categoryBreakdown]
+  )
 
   const totalAll = totalMonthly + totalOnce
 
@@ -174,7 +180,7 @@ export function BudgetView() {
           <h3 className="text-sm font-semibold text-muted-foreground">カテゴリ別</h3>
           <div className="space-y-2">
             {categoryBreakdown.map(([cat, amount]) => {
-              const pct = totalMonthly > 0 ? (amount / totalMonthly) * 100 : 0
+              const pct = categoryTotal > 0 ? (amount / categoryTotal) * 100 : 0
               return (
                 <div key={cat} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
