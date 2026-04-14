@@ -220,7 +220,7 @@ export function CSVImport({ open, onOpenChange }: Props) {
                 <Button variant="outline" onClick={() => fileRef.current?.click()}>
                   ファイルを選択
                 </Button>
-                <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" className="hidden" onChange={handleFile} />
+                <input ref={fileRef} type="file" accept=".csv,.tsv" className="hidden" onChange={handleFile} />
               </div>
               <details className="rounded-lg border p-3">
                 <summary className="cursor-pointer text-xs font-medium text-muted-foreground">CSVサンプルを見る</summary>

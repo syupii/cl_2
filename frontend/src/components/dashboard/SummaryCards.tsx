@@ -6,29 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSummary } from '@/hooks/useSummary'
-import { formatJPY } from '@/lib/utils'
+import { useSubscriptions } from '@/hooks/useSubscriptions'
+import { formatJPY, isSubscription } from '@/lib/utils'
+import { loadBudget } from '@/lib/localStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
-
-const BUDGET_KEY = STORAGE_KEYS.MONTHLY_BUDGET
 
 export function SummaryCards() {
   const { data, isLoading } = useSummary()
+  const { data: subscriptions = [] } = useSubscriptions()
   const [budget, setBudget] = useState<number | null>(null)
   const [editingBudget, setEditingBudget] = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
 
   useEffect(() => {
-    const saved = localStorage.getItem(BUDGET_KEY)
-    if (saved) setBudget(parseInt(saved, 10))
+    setBudget(loadBudget())
   }, [])
 
   function saveBudget() {
     const val = parseInt(budgetInput, 10)
     if (!isNaN(val) && val > 0) {
-      localStorage.setItem(BUDGET_KEY, String(val))
+      localStorage.setItem(STORAGE_KEYS.MONTHLY_BUDGET, String(val))
       setBudget(val)
     } else if (budgetInput === '') {
-      localStorage.removeItem(BUDGET_KEY)
+      localStorage.removeItem(STORAGE_KEYS.MONTHLY_BUDGET)
       setBudget(null)
     }
     setEditingBudget(false)
@@ -36,7 +36,8 @@ export function SummaryCards() {
 
   const totalMonthly = parseInt(data?.total_monthly_jpy ?? '0', 10)
   const annualCost = totalMonthly * 12
-  const activeCount = data?.active_count ?? 0
+  // サブスクのみカウント（支出・一回払いを除外）
+  const activeCount = subscriptions.filter((s) => isSubscription(s) && s.status === 'active').length
   const categoryCount = data?.category_breakdown?.length ?? 0
   const overBudget = budget !== null && totalMonthly > budget
 

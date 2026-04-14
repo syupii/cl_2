@@ -21,6 +21,7 @@ import (
 const (
 	CycleMonthly = "monthly"
 	CycleYearly  = "yearly"
+	CycleOnce    = "once"
 )
 
 // BaseCurrency is the currency that all aggregated/summary values use.
@@ -62,7 +63,8 @@ func (c *Converter) ToJPY(amount decimal.Decimal, currency string) (decimal.Deci
 }
 
 // MonthlyEquivalent divides yearly prices by 12 and leaves monthly prices
-// untouched. Any other cycle value is rejected to match the DB CHECK.
+// untouched. One-time ("once") expenses return zero so they do not inflate
+// recurring monthly totals. Any other cycle value is rejected to match the DB CHECK.
 func MonthlyEquivalent(amount decimal.Decimal, cycle string) (decimal.Decimal, error) {
 	switch strings.ToLower(strings.TrimSpace(cycle)) {
 	case CycleMonthly:
@@ -71,6 +73,9 @@ func MonthlyEquivalent(amount decimal.Decimal, cycle string) (decimal.Decimal, e
 		// Divide with 4 decimal places of precision; the final round happens
 		// in MonthlyJPY below so summing remains stable.
 		return amount.DivRound(decimal.NewFromInt(12), 4), nil
+	case CycleOnce:
+		// One-time expenses don't recur, so they contribute 0 to monthly totals.
+		return decimal.Zero, nil
 	default:
 		return decimal.Zero, fmt.Errorf("money: unsupported billing_cycle %q", cycle)
 	}

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.service_plans (
     template_id    UUID        NOT NULL REFERENCES public.service_templates(id) ON DELETE CASCADE,
     plan_name      VARCHAR(255) NOT NULL,
     default_price  NUMERIC(12, 2) NOT NULL CHECK (default_price >= 0),
-    billing_cycle  VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly')),
+    billing_cycle  VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly', 'once')),
     currency       VARCHAR(8)   NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     UNIQUE (template_id, plan_name, billing_cycle)
@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_service_plans_template_id
     ON public.service_plans (template_id);
 
 COMMENT ON TABLE  public.service_plans               IS 'Plans (tiers) belonging to a service_template row.';
-COMMENT ON COLUMN public.service_plans.billing_cycle IS 'Either "monthly" or "yearly".';
+COMMENT ON COLUMN public.service_plans.billing_cycle IS 'Either "monthly", "yearly", or "once" (one-time expense).';
 COMMENT ON COLUMN public.service_plans.currency      IS 'ISO 4217 3-letter currency code (JPY, USD, ...).';
 
 -- =============================================================================
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.user_subscriptions (
     plan_name         VARCHAR(255),
     price             NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
     currency          VARCHAR(8)   NOT NULL DEFAULT 'JPY' CHECK (currency ~ '^[A-Z]{3}$'),
-    billing_cycle     VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly')),
+    billing_cycle     VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly', 'once')),
     next_billing_date DATE         NOT NULL,
     category          VARCHAR(64),
     payment_method    VARCHAR(128),
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_next_billing_date
 COMMENT ON TABLE  public.user_subscriptions                    IS 'Individual subscriptions owned by a Supabase auth user.';
 COMMENT ON COLUMN public.user_subscriptions.user_id            IS 'Owner (Supabase auth.users.id). RLS restricts access to this user.';
 COMMENT ON COLUMN public.user_subscriptions.status             IS 'Soft-deletion flag. "active" or "cancelled". We never DELETE rows.';
-COMMENT ON COLUMN public.user_subscriptions.billing_cycle      IS 'Either "monthly" or "yearly". yearly values are divided by 12 in summary.';
+COMMENT ON COLUMN public.user_subscriptions.billing_cycle      IS 'Either "monthly", "yearly", or "once". yearly values are divided by 12 in summary; once values contribute 0 to monthly totals.';
 COMMENT ON COLUMN public.user_subscriptions.next_billing_date  IS 'Next scheduled charge date.';
 
 -- Trigger: keep updated_at in sync on row update ------------------------------

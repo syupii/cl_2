@@ -53,9 +53,9 @@ func validateCommon(
 
 	v.BillingCycle = strings.ToLower(strings.TrimSpace(billingCycle))
 	switch v.BillingCycle {
-	case money.CycleMonthly, money.CycleYearly:
+	case money.CycleMonthly, money.CycleYearly, money.CycleOnce:
 	default:
-		return v, fmt.Errorf("billing_cycle must be %q or %q", money.CycleMonthly, money.CycleYearly)
+		return v, fmt.Errorf("billing_cycle must be %q, %q, or %q", money.CycleMonthly, money.CycleYearly, money.CycleOnce)
 	}
 
 	if strings.TrimSpace(nextBillingDate) == "" {

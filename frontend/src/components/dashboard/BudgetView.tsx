@@ -7,18 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useSubscriptions, useDeleteSubscription, useUpdateSubscription } from '@/hooks/useSubscriptions'
-import { formatJPY, isExpense } from '@/lib/utils'
-import { STORAGE_KEYS } from '@/lib/constants'
+import { formatJPY, isExpense, isOnceExpense } from '@/lib/utils'
+import { loadBudget } from '@/lib/localStorage'
 import { ExpenseModal } from './ExpenseModal'
 import type { SubscriptionDTO } from '@/lib/api-client'
-
-function loadBudget(): number | null {
-  if (typeof window === 'undefined') return null
-  const saved = localStorage.getItem(STORAGE_KEYS.MONTHLY_BUDGET)
-  if (!saved) return null
-  const n = parseInt(saved, 10)
-  return isNaN(n) ? null : n
-}
 
 export function BudgetView() {
   const { data: all = [], isLoading } = useSubscriptions()
@@ -37,21 +29,31 @@ export function BudgetView() {
   const activeExpenses = useMemo(() => expenses.filter((s) => s.status === 'active'), [expenses])
   const cancelledExpenses = useMemo(() => expenses.filter((s) => s.status === 'cancelled'), [expenses])
 
-  // 月額合計（active のみ）
+  // 毎月・年払い（recurring）と一回払い（once）に分割
+  const recurringExpenses = useMemo(() => activeExpenses.filter((s) => !isOnceExpense(s)), [activeExpenses])
+  const onceExpenses = useMemo(() => activeExpenses.filter(isOnceExpense), [activeExpenses])
+
+  // 月額合計（recurring のみ）
   const totalMonthly = useMemo(
-    () => activeExpenses.reduce((sum, s) => sum + parseInt(s.monthly_cost_jpy ?? '0', 10), 0),
-    [activeExpenses]
+    () => recurringExpenses.reduce((sum, s) => sum + parseInt(s.monthly_cost_jpy ?? '0', 10), 0),
+    [recurringExpenses]
   )
 
-  // カテゴリ別集計
+  // 一回払い合計（実際の金額）
+  const totalOnce = useMemo(
+    () => onceExpenses.reduce((sum, s) => sum + parseInt(s.price ?? '0', 10), 0),
+    [onceExpenses]
+  )
+
+  // カテゴリ別集計（recurring のみ）
   const categoryBreakdown = useMemo(() => {
     const map = new Map<string, number>()
-    for (const s of activeExpenses) {
+    for (const s of recurringExpenses) {
       const cat = s.category ?? '未分類'
       map.set(cat, (map.get(cat) ?? 0) + parseInt(s.monthly_cost_jpy ?? '0', 10))
     }
     return [...map.entries()].sort((a, b) => b[1] - a[1])
-  }, [activeExpenses])
+  }, [recurringExpenses])
 
   const budgetPct = budget !== null && budget > 0 ? Math.min((totalMonthly / budget) * 100, 100) : null
   const overBudget = budget !== null && totalMonthly > budget
@@ -140,8 +142,10 @@ export function BudgetView() {
             <CardTitle className="text-sm font-medium text-muted-foreground">登録支出件数</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold">{activeExpenses.length}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">有効な支出項目</p>
+            <p className="text-2xl font-bold">{recurringExpenses.length}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              毎月{onceExpenses.length > 0 ? `・一回払い ${onceExpenses.length}件` : ''}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -188,15 +192,15 @@ export function BudgetView() {
         </div>
       )}
 
-      {/* 支出一覧（有効） */}
+      {/* 毎月の支出一覧 */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">
-          支出一覧（有効: {activeExpenses.length}件）
+          毎月の支出（{recurringExpenses.length}件）
         </h3>
 
-        {activeExpenses.length === 0 ? (
+        {recurringExpenses.length === 0 ? (
           <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed">
-            <p className="text-sm text-muted-foreground">支出がありません</p>
+            <p className="text-sm text-muted-foreground">毎月の支出がありません</p>
             <Button variant="outline" size="sm" onClick={() => { setEditTarget(null); setModalOpen(true) }}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               支出を追加
@@ -204,7 +208,7 @@ export function BudgetView() {
           </div>
         ) : (
           <div className="space-y-2">
-            {activeExpenses.map((sub) => (
+            {recurringExpenses.map((sub) => (
               <ExpenseCard
                 key={sub.id}
                 sub={sub}
@@ -216,6 +220,30 @@ export function BudgetView() {
           </div>
         )}
       </div>
+
+      {/* 一回払いの支出 */}
+      {onceExpenses.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-muted-foreground">
+              一時的な支出（{onceExpenses.length}件）
+            </h3>
+            <span className="text-sm font-medium">{formatJPY(totalOnce)}</span>
+          </div>
+          <div className="space-y-2">
+            {onceExpenses.map((sub) => (
+              <ExpenseCard
+                key={sub.id}
+                sub={sub}
+                onEdit={() => { setEditTarget(sub); setModalOpen(true) }}
+                onDelete={() => handleDelete(sub)}
+                isPending={deleteMutation.isPending || updateMutation.isPending}
+                isOnce
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 解約済み支出 */}
       {cancelledExpenses.length > 0 && (
@@ -256,9 +284,10 @@ interface ExpenseCardProps {
   onDelete: () => void
   onRestore?: () => void
   isPending: boolean
+  isOnce?: boolean
 }
 
-function ExpenseCard({ sub, onEdit, onDelete, onRestore, isPending }: ExpenseCardProps) {
+function ExpenseCard({ sub, onEdit, onDelete, onRestore, isPending, isOnce }: ExpenseCardProps) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3">
       <div className="min-w-0 flex-1">
@@ -267,18 +296,21 @@ function ExpenseCard({ sub, onEdit, onDelete, onRestore, isPending }: ExpenseCar
           {sub.category && (
             <Badge variant="outline" className="shrink-0 text-xs">{sub.category}</Badge>
           )}
+          {isOnce && (
+            <Badge variant="secondary" className="shrink-0 text-xs">一回払い</Badge>
+          )}
         </div>
         {sub.notes && (
           <p className="mt-0.5 text-xs text-muted-foreground truncate">{sub.notes}</p>
         )}
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {sub.billing_cycle === 'yearly' ? '年払い' : '毎月'} · 次回: {sub.next_billing_date}
+          {isOnce ? '一回払い' : sub.billing_cycle === 'yearly' ? '年払い' : '毎月'} · 支払日: {sub.next_billing_date}
         </p>
       </div>
       <div className="shrink-0 text-right">
         <p className="font-semibold">
-          {formatJPY(sub.monthly_cost_jpy)}
-          <span className="text-xs font-normal text-muted-foreground">/月</span>
+          {isOnce ? formatJPY(sub.price) : formatJPY(sub.monthly_cost_jpy)}
+          {!isOnce && <span className="text-xs font-normal text-muted-foreground">/月</span>}
         </p>
         <div className="mt-1 flex items-center justify-end gap-0.5">
           {onRestore && (
