@@ -32,10 +32,8 @@ const securityHeaders = [
   { key: "X-XSS-Protection", value: "1; mode=block" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
+  // Strict-Transport-Security (HSTS) はリバースプロキシ・CDN 側で設定する。
+  // アプリ側で設定すると HTTP 環境（localhost 等）でリロード不可になるため除外。
   { key: "Content-Security-Policy", value: csp },
 ];
 
