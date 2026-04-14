@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, LayoutDashboard, CalendarDays, Sun, Moon, ShieldCheck, Wallet } from 'lucide-react'
+import { LogOut, LayoutDashboard, CalendarDays, Sun, Moon, ShieldCheck, Wallet, CreditCard } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase()
 
 const NAV = [
   { href: '/dashboard', label: 'ダッシュボード', Icon: LayoutDashboard },
+  { href: '/dashboard/subscriptions', label: 'サブスク', Icon: CreditCard },
   { href: '/dashboard/budget', label: '月次予算', Icon: Wallet },
   { href: '/dashboard/calendar', label: 'カレンダー', Icon: CalendarDays },
 ]
