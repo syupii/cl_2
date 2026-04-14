@@ -1,16 +1,18 @@
 import type { NextConfig } from "next";
 
 // Content-Security-Policy directives.
-// connect-src は意図的に省略。環境変数 NEXT_PUBLIC_API_BASE_URL や
-// NEXT_PUBLIC_SUPABASE_URL はビルド時に取得できない場合があり、
-// 誤って全APIリクエストをブロックするリスクがある。
-// バックエンドへのアクセス制御は JWT 認証と CORS で行う。
+// connect-src は 'self' + https: + wss: を許可。
+// default-src が 'self' のままだと connect-src のフォールバックとして
+// 外部APIリクエストをすべてブロックするため明示的に設定が必要。
+// バックエンドURLは環境によって変わるため https: で全HTTPS接続を許可し、
+// 接続先の認可はJWT認証とCORSに委ねる。
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
-  "img-src 'self' data: blob:",
+  "connect-src 'self' https: wss:",
+  "img-src 'self' data: blob: https:",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
