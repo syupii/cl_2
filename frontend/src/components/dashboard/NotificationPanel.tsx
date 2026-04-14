@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
 import { useClickOutside } from '@/hooks/useClickOutside'
-import { formatDate, daysUntil } from '@/lib/utils'
+import { formatDate, daysUntil, isExpense } from '@/lib/utils'
 import { STORAGE_KEYS } from '@/lib/constants'
 
 const DEFAULT_WARN_DAYS = 30
@@ -37,7 +37,7 @@ export function NotificationPanel() {
   useClickOutside(ref, () => setOpen(false), open)
 
   const notifications = subs
-    .filter((s) => s.status === 'active')
+    .filter((s) => s.status === 'active' && !isExpense(s))
     .map((s) => ({ sub: s, days: daysUntil(s.next_billing_date) }))
     .filter(({ days }) => days !== null && days <= warnDays)
     .sort((a, b) => (a.days ?? 999) - (b.days ?? 999))

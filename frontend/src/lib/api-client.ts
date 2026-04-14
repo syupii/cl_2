@@ -39,14 +39,28 @@ async function request<T>(
   body?: unknown,
 ): Promise<T> {
   const token = await getToken()
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30_000)
+
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('リクエストがタイムアウトしました')
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
 
   // 401 Unauthorized: セッション切れ → サインアウトしてログイン画面へ
   if (res.status === 401) {

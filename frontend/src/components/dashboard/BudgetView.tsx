@@ -55,8 +55,10 @@ export function BudgetView() {
     return [...map.entries()].sort((a, b) => b[1] - a[1])
   }, [recurringExpenses])
 
-  const budgetPct = budget !== null && budget > 0 ? Math.min((totalMonthly / budget) * 100, 100) : null
-  const overBudget = budget !== null && totalMonthly > budget
+  const totalAll = totalMonthly + totalOnce
+
+  const budgetPct = budget !== null && budget > 0 ? Math.min((totalAll / budget) * 100, 100) : null
+  const overBudget = budget !== null && totalAll > budget
 
   async function handleDelete(sub: SubscriptionDTO) {
     if (!confirm(`「${sub.service_name}」を削除しますか？`)) return
@@ -122,14 +124,14 @@ export function BudgetView() {
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className={`text-2xl font-bold ${overBudget ? 'text-destructive' : ''}`}>
-              {formatJPY(totalMonthly)}
+              {formatJPY(totalAll)}
             </p>
             {budget !== null && (
               <p className="mt-0.5 text-xs text-muted-foreground">
                 予算: {formatJPY(budget)}
                 {overBudget && (
                   <span className="ml-1 text-destructive font-medium">
-                    （{formatJPY(totalMonthly - budget)} 超過）
+                    （{formatJPY(totalAll - budget)} 超過）
                   </span>
                 )}
               </p>
