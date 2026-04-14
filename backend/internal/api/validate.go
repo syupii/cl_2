@@ -69,6 +69,21 @@ func validateCommon(
 	return v, nil
 }
 
+// validateOptionalFields checks length constraints for optional subscription
+// fields. Nil pointers (field absent) are valid and pass without error.
+func validateOptionalFields(planName, category, notes *string) error {
+	if planName != nil && len(*planName) > 100 {
+		return errors.New("plan_name must be at most 100 characters")
+	}
+	if category != nil && len(*category) > 100 {
+		return errors.New("category must be at most 100 characters")
+	}
+	if notes != nil && len(*notes) > 1000 {
+		return errors.New("notes must be at most 1000 characters")
+	}
+	return nil
+}
+
 // validateStatus ensures Update's status field is one of the two allowed values.
 func validateStatus(status string) (string, error) {
 	s := strings.ToLower(strings.TrimSpace(status))

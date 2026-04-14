@@ -53,6 +53,11 @@ export function AuthForm({ mode }: Props) {
         toast.success('ログインしました')
         router.push('/dashboard')
       } else {
+        if (password.length < 8) {
+          setFormError('パスワードは8文字以上で入力してください')
+          setLoading(false)
+          return
+        }
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
         // When email confirmation is ON, Supabase hides duplicate errors for
@@ -101,7 +106,7 @@ export function AuthForm({ mode }: Props) {
               id="password"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setFormError(null) }}
               placeholder="••••••••"

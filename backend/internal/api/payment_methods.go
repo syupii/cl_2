@@ -1,8 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -56,12 +56,17 @@ func (h *Handler) CreatePaymentMethod(w http.ResponseWriter, r *http.Request) {
 	userID := auth.MustUserID(r.Context())
 
 	var req CreatePaymentMethodRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(r, &req); err != nil {
 		httpx.BadRequest(w, "invalid request body")
 		return
 	}
+	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
 		httpx.BadRequest(w, "name is required")
+		return
+	}
+	if len(req.Name) > 100 {
+		httpx.BadRequest(w, "name must be at most 100 characters")
 		return
 	}
 

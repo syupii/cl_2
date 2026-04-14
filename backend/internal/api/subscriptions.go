@@ -77,6 +77,11 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateOptionalFields(req.PlanName, req.Category, req.Notes); err != nil {
+		httpx.BadRequest(w, err.Error())
+		return
+	}
+
 	nextDate, _ := parseDate(common.NextBillingDate) // already validated
 
 	params := repository.CreateUserSubscriptionParams{
@@ -144,6 +149,11 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 		req.ServiceName, req.Price, req.Currency, req.BillingCycle, req.NextBillingDate, h.conv,
 	)
 	if err != nil {
+		httpx.BadRequest(w, err.Error())
+		return
+	}
+
+	if err := validateOptionalFields(req.PlanName, req.Category, req.Notes); err != nil {
 		httpx.BadRequest(w, err.Error())
 		return
 	}
