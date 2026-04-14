@@ -19,6 +19,7 @@ export function BudgetView() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<SubscriptionDTO | null>(null)
   const [budget, setBudget] = useState<number | null>(null)
+  const [categoryView, setCategoryView] = useState<'recurring' | 'all'>('recurring')
 
   useEffect(() => {
     setBudget(loadBudget())
@@ -45,8 +46,18 @@ export function BudgetView() {
     [onceExpenses]
   )
 
-  // カテゴリ別集計（全アクティブ支出を実際の金額で集計）
-  const categoryBreakdown = useMemo(() => {
+  // カテゴリ別集計 — 固定費ビュー（recurring のみ、月額換算）
+  const categoryBreakdownRecurring = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const s of recurringExpenses) {
+      const cat = s.category ?? '未分類'
+      map.set(cat, (map.get(cat) ?? 0) + parseInt(s.monthly_cost_jpy ?? '0', 10))
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1])
+  }, [recurringExpenses])
+
+  // カテゴリ別集計 — 全支出ビュー（実際の金額）
+  const categoryBreakdownAll = useMemo(() => {
     const map = new Map<string, number>()
     for (const s of activeExpenses) {
       const cat = s.category ?? '未分類'
@@ -55,7 +66,9 @@ export function BudgetView() {
     return [...map.entries()].sort((a, b) => b[1] - a[1])
   }, [activeExpenses])
 
-  // カテゴリ別パーセント計算用の合計（実際の金額ベース）
+  const categoryBreakdown = categoryView === 'recurring' ? categoryBreakdownRecurring : categoryBreakdownAll
+
+  // カテゴリ別パーセント計算用の合計
   const categoryTotal = useMemo(
     () => categoryBreakdown.reduce((sum, [, v]) => sum + v, 0),
     [categoryBreakdown]
@@ -175,28 +188,48 @@ export function BudgetView() {
       )}
 
       {/* カテゴリ別内訳 */}
-      {categoryBreakdown.length > 0 && (
+      {(categoryBreakdownRecurring.length > 0 || categoryBreakdownAll.length > 0) && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground">カテゴリ別</h3>
-          <div className="space-y-2">
-            {categoryBreakdown.map(([cat, amount]) => {
-              const pct = categoryTotal > 0 ? (amount / categoryTotal) * 100 : 0
-              return (
-                <div key={cat} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{cat}</span>
-                    <span className="text-muted-foreground">{formatJPY(amount)}</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary/60"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">カテゴリ別</h3>
+            <div className="ml-auto flex overflow-hidden rounded-md border text-xs">
+              <button
+                className={`px-2.5 py-1 transition-colors ${categoryView === 'recurring' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                onClick={() => setCategoryView('recurring')}
+              >
+                固定費
+              </button>
+              <button
+                className={`px-2.5 py-1 transition-colors ${categoryView === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                onClick={() => setCategoryView('all')}
+              >
+                全支出
+              </button>
+            </div>
           </div>
+          {categoryBreakdown.length === 0 ? (
+            <p className="text-xs text-muted-foreground">データがありません</p>
+          ) : (
+            <div className="space-y-2">
+              {categoryBreakdown.map(([cat, amount]) => {
+                const pct = categoryTotal > 0 ? (amount / categoryTotal) * 100 : 0
+                return (
+                  <div key={cat} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{cat}</span>
+                      <span className="text-muted-foreground">{formatJPY(amount)}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary/60"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
