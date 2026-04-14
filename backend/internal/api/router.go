@@ -40,6 +40,27 @@ func NewRouter(cfg RouterConfig) http.Handler {
 		MaxAge:           300,
 	}))
 
+	// Security headers
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+			next.ServeHTTP(w, r)
+		})
+	})
+
+	// Request body size limit (64 KB)
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Body != nil {
+				r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	// Public endpoints --------------------------------------------------------
 	r.Get("/healthz", healthz)
 	r.Get("/swagger/*", httpSwagger.Handler(
