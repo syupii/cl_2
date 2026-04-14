@@ -5,6 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSummary } from '@/hooks/useSummary'
 import { formatJPY } from '@/lib/utils'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function PieTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null
+  const name: string = payload[0]?.name ?? ''
+  const value: number = Number(payload[0]?.value ?? 0)
+  return (
+    <div className="rounded-lg border bg-popover px-3 py-2 shadow-md">
+      <p className="text-xs font-medium text-popover-foreground">{name}</p>
+      <p className="text-sm font-bold text-popover-foreground">{formatJPY(value)}</p>
+    </div>
+  )
+}
+
 const COLORS = [
   '#6366f1', // indigo
   '#f43f5e', // rose
@@ -80,16 +93,8 @@ export function CategoryPieChart() {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip
-                  formatter={(value) => [formatJPY(Number(value)), '月額']}
-                  contentStyle={{
-                    fontSize: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid hsl(var(--border))',
-                    background: 'hsl(var(--popover))',
-                    color: 'hsl(var(--popover-foreground))',
-                  }}
-                />
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <Tooltip content={(props: any) => <PieTooltip {...props} />} />
               </PieChart>
             </ResponsiveContainer>
             {/* Center total */}
