@@ -103,8 +103,8 @@ export function BudgetView() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">月次予算</h2>
-          <p className="text-sm text-muted-foreground">サブスク以外の月次支出を管理します</p>
+          <h2 className="text-lg font-semibold">支出管理</h2>
+          <p className="text-sm text-muted-foreground">家賃・光熱費などサブスク以外の支出を管理します</p>
         </div>
         <Button onClick={() => { setEditTarget(null); setModalOpen(true) }} className="gap-1.5">
           <Plus className="h-4 w-4" />

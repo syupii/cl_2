@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
 import type { SubscriptionDTO } from '@/lib/api-client'
+import { isExpense, EXPENSE_TAG } from '@/lib/utils'
 
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日']
 
@@ -139,7 +140,7 @@ export function BillingCalendar() {
                 {events.slice(0, 2).map((s) => (
                   <span
                     key={s.id}
-                    className="w-full truncate rounded bg-primary/15 px-1 text-[10px] leading-4 text-primary"
+                    className={`w-full truncate rounded px-1 text-[10px] leading-4 ${isExpense(s) ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400' : 'bg-primary/15 text-primary'}`}
                   >
                     {s.service_name}
                   </span>
@@ -169,9 +170,11 @@ export function BillingCalendar() {
                 <li key={s.id} className="flex items-center justify-between text-sm">
                   <span>
                     {s.service_name}
-                    {s.plan_name && (
+                    {isExpense(s) ? (
+                      <span className="ml-1 text-xs text-orange-500">支出</span>
+                    ) : s.plan_name && s.plan_name !== EXPENSE_TAG ? (
                       <span className="ml-1 text-xs text-muted-foreground">({s.plan_name})</span>
-                    )}
+                    ) : null}
                   </span>
                   <span className="font-medium">
                     {s.price} {s.currency}
