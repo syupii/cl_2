@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSummary } from '@/hooks/useSummary'
-import { formatJPY } from '@/lib/utils'
+import { useSubscriptions } from '@/hooks/useSubscriptions'
+import { formatJPY, isExpense } from '@/lib/utils'
 
 const COLORS = [
   '#6366f1', // indigo
@@ -19,16 +20,41 @@ const COLORS = [
   '#f59e0b', // amber
 ]
 
-export function CategoryPieChart() {
-  const { data, isLoading } = useSummary()
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+type ViewMode = 'monthly' | 'actual'
 
-  const chartData = (data?.category_breakdown ?? []).map((cat) => ({
+export function CategoryPieChart() {
+  const { data, isLoading: summaryLoading } = useSummary()
+  const { data: subscriptions = [], isLoading: subsLoading } = useSubscriptions()
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly')
+
+  // 月額換算ビュー: summary API の monthly_cost_jpy ベース（yearly は ÷12 済み）
+  const monthlyChartData = (data?.category_breakdown ?? []).map((cat) => ({
     name: cat.category ?? '未分類',
     value: parseInt(cat.amount_jpy ?? '0', 10),
     count: cat.count ?? 0,
   }))
 
+  // 実費ビュー: サブスクリプションの実際の請求額
+  // yearly → monthly_cost_jpy × 12 で年額を復元、monthly → monthly_cost_jpy そのまま
+  const actualChartData = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const s of subscriptions) {
+      if (isExpense(s) || s.status !== 'active') continue
+      const monthly = parseInt(s.monthly_cost_jpy ?? '0', 10)
+      if (monthly === 0) continue // once 等の ¥0 は除外
+      const amount = s.billing_cycle === 'yearly' ? monthly * 12 : monthly
+      const cat = s.category ?? '未分類'
+      map.set(cat, (map.get(cat) ?? 0) + amount)
+    }
+    return [...map.entries()]
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value, count: 1 }))
+  }, [subscriptions])
+
+  const isLoading = summaryLoading || subsLoading
+  const chartData = viewMode === 'monthly' ? monthlyChartData : actualChartData
   const total = chartData.reduce((sum, d) => sum + d.value, 0)
   const hovered = hoveredIndex !== null ? chartData[hoveredIndex] : null
 
@@ -36,7 +62,7 @@ export function CategoryPieChart() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">カテゴリ別支出</CardTitle>
+          <CardTitle className="text-sm font-medium">カテゴリ別サブスク</CardTitle>
         </CardHeader>
         <CardContent className="flex h-64 items-center justify-center">
           <div className="h-40 w-40 animate-pulse rounded-full bg-muted" />
@@ -49,7 +75,7 @@ export function CategoryPieChart() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">カテゴリ別支出</CardTitle>
+          <CardTitle className="text-sm font-medium">カテゴリ別サブスク</CardTitle>
         </CardHeader>
         <CardContent className="flex h-64 items-center justify-center">
           <p className="text-sm text-muted-foreground">データがありません</p>
@@ -61,7 +87,23 @@ export function CategoryPieChart() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">カテゴリ別支出</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium">カテゴリ別サブスク</CardTitle>
+          <div className="flex overflow-hidden rounded-md border text-xs">
+            <button
+              className={`px-2.5 py-1 transition-colors ${viewMode === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              onClick={() => { setHoveredIndex(null); setViewMode('monthly') }}
+            >
+              月額換算
+            </button>
+            <button
+              className={`px-2.5 py-1 transition-colors ${viewMode === 'actual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              onClick={() => { setHoveredIndex(null); setViewMode('actual') }}
+            >
+              実費
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -107,7 +149,9 @@ export function CategoryPieChart() {
                 </>
               ) : (
                 <>
-                  <span className="text-[10px] text-muted-foreground">合計</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {viewMode === 'monthly' ? '月額合計' : '実費合計'}
+                  </span>
                   <span className="text-sm font-bold leading-tight">{formatJPY(total)}</span>
                 </>
               )}
