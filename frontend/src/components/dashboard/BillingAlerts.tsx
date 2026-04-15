@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Bell, BellOff, X, AlertTriangle, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
@@ -47,14 +47,25 @@ export function BillingAlerts() {
     }
   }, [])
 
-  const upcoming = subs
-    .filter((s) => {
-      if (s.status !== 'active') return false
-      if (isExpense(s)) return false
-      const d = daysUntil(s.next_billing_date)
-      return d !== null && d <= warnDays
-    })
-    .sort((a, b) => (daysUntil(a.next_billing_date) ?? 999) - (daysUntil(b.next_billing_date) ?? 999))
+  // subs / warnDays が変わったときだけ再計算する。useMemo を外すと、
+  // upcoming が毎レンダーで新しい配列参照になり、下の useEffect が
+  // 依存配列 (.length だけ) で取りこぼす closure のせいで通知が
+  // 古い参照で発火し、iOS Safari では再レンダー連鎖で heap を食い潰す。
+  const upcoming = useMemo(
+    () =>
+      subs
+        .filter((s) => {
+          if (s.status !== 'active') return false
+          if (isExpense(s)) return false
+          const d = daysUntil(s.next_billing_date)
+          return d !== null && d <= warnDays
+        })
+        .sort(
+          (a, b) =>
+            (daysUntil(a.next_billing_date) ?? 999) - (daysUntil(b.next_billing_date) ?? 999),
+        ),
+    [subs, warnDays],
+  )
 
   // Fire browser notification once per session when there are upcoming bills
   useEffect(() => {
@@ -65,7 +76,7 @@ export function BillingAlerts() {
       fireBrowserNotification(upcoming)
       sessionStorage.setItem(key, '1')
     }
-  }, [upcoming.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [upcoming])
 
   async function requestPermission() {
     if (!('Notification' in window)) return

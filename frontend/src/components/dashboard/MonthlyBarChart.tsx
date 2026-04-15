@@ -96,7 +96,13 @@ export function MonthlyBarChart() {
                 color: 'hsl(var(--popover-foreground))',
               }}
             />
-            <Bar dataKey="amount" fill="#6366f1" radius={[5, 5, 0, 0]} maxBarSize={56}>
+            <Bar
+              dataKey="amount"
+              fill="#6366f1"
+              radius={[5, 5, 0, 0]}
+              maxBarSize={56}
+              isAnimationActive={false}
+            >
               <LabelList
                 dataKey="amount"
                 position="top"
