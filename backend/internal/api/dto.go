@@ -109,7 +109,15 @@ type MonthlyTrendPoint struct {
 
 // SummaryResponse is the aggregated dashboard payload returned by GET /summary.
 type SummaryResponse struct {
-	TotalMonthlyJPY   string              `json:"total_monthly_jpy"   example:"7680"`
+	// TotalMonthlyJPY is the recurring monthly burden in JPY: monthly subs at
+	// full price, yearly subs divided by 12. One-time (once) expenses are NOT
+	// included here — they are surfaced separately as OnceTotalJPY so the
+	// frontend can decide whether to annualise ×12 or not.
+	TotalMonthlyJPY string `json:"total_monthly_jpy"   example:"7680"`
+	// OnceTotalJPY is the sum of full prices of all active "once" expenses,
+	// in JPY. The frontend adds this on top of the monthly KPI but does NOT
+	// multiply it by 12 when computing annual cost.
+	OnceTotalJPY      string              `json:"once_total_jpy"      example:"5000"`
 	Currency          string              `json:"currency"            example:"JPY"`
 	ActiveCount       int                 `json:"active_count"        example:"5"`
 	CategoryBreakdown []CategoryBreakdown `json:"category_breakdown"`

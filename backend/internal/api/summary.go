@@ -58,9 +58,18 @@ func buildSummary(
 	now time.Time,
 ) (SummaryResponse, error) {
 	total := decimal.Zero
+	onceTotal := decimal.Zero
+	subscriptionCount := 0
 	byCategory := make(map[string]*CategoryBreakdown)
 
 	// Build the list of trend months (oldest first).
+	//
+	// NOTE: The trend is derived from the *currently active* rows and walks
+	// back through each month using CreatedAt. Cancelled subscriptions
+	// therefore drop out of historical months as well — the chart reflects
+	// "how today's lineup evolved" rather than "what you actually paid back
+	// then". Reconstructing the latter would require a cancelled_at column
+	// on user_subscriptions so we can test month-membership over time.
 	trendMonths := lastNMonths(now, monthlyTrendWindow)
 	trendTotals := make(map[string]decimal.Decimal, len(trendMonths))
 	for _, m := range trendMonths {
@@ -69,23 +78,35 @@ func buildSummary(
 
 	for _, s := range active {
 		isExpenseItem := s.PlanName.Valid && s.PlanName.String == "__expense__"
+		isOnce := s.BillingCycle == money.CycleOnce
 
-		// 支出（plan_name = '__expense__'）はサブスク集計から除外する。
-		// ただし "once"（一回払い）の支出だけは「今月の月額合計 KPI」に
-		// 満額を加算する — 一回払いは月次に按分せず、実際に発生した月の
-		// 負担として総額をそのまま計上する方が自然なため。
-		// カテゴリ円グラフ・トレンドバーには引き続き含めない
-		// （1 件ごとの突発支出は再発性のグラフには馴染まない）。
-		if isExpenseItem {
-			if s.BillingCycle == money.CycleOnce {
+		// 「一回払い (once)」は *課金サイクル* を主軸に月次集計から完全に外す。
+		// MonthlyJPY は once に対して 0 を返すので total は壊れないが、
+		//   - カテゴリ集計には 0 円の行が残り categoryCount を狂わせる
+		//   - トレンドにも 0 を足すだけの無意味なイテレーションが走る
+		// ため、ここで明示的に分岐する。
+		//   * expense-once      : OnceTotalJPY に満額を積み上げて別フィールドで返す
+		//     （一回払いは月次按分せず、年額換算でも ×12 しない）
+		//   * subscription-once : 現状のフロント UI は作らせないが、防衛的に無視
+		if isOnce {
+			if isExpenseItem {
 				fullJPY, err := conv.ToJPY(s.Price, s.Currency)
 				if err != nil {
 					return SummaryResponse{}, err
 				}
-				total = total.Add(fullJPY.Round(0))
+				onceTotal = onceTotal.Add(fullJPY.Round(0))
 			}
 			continue
 		}
+
+		// 再発性の支出（expense かつ monthly/yearly）は支出タブ側で管理し、
+		// サブスクの total/category/trend には含めない。
+		if isExpenseItem {
+			continue
+		}
+
+		// ここに来るのは「純粋なサブスク (monthly/yearly)」のみ。
+		subscriptionCount++
 
 		monthlyJPY, err := conv.MonthlyJPY(s.Price, s.Currency, s.BillingCycle)
 		if err != nil {
@@ -140,9 +161,12 @@ func buildSummary(
 	}
 
 	return SummaryResponse{
-		TotalMonthlyJPY:   total.StringFixed(0),
-		Currency:          money.BaseCurrency,
-		ActiveCount:       len(active),
+		TotalMonthlyJPY: total.StringFixed(0),
+		OnceTotalJPY:    onceTotal.StringFixed(0),
+		Currency:        money.BaseCurrency,
+		// ActiveCount は「アクティブな純粋サブスク」の件数。expense-* や
+		// once は除外済みなので、UI の「有効サブスク数」カードとズレない。
+		ActiveCount:       subscriptionCount,
 		CategoryBreakdown: categoryOut,
 		MonthlyTrend:      trendOut,
 	}, nil

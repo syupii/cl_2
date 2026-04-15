@@ -35,6 +35,16 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      {
+        // iOS Safari aggressively caches the service worker script itself,
+        // which can leave users stuck on a broken old SW. Forcing revalidation
+        // guarantees they pick up fixes to /sw.js on the very next visit.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
     ];
   },
 };
