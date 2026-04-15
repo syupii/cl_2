@@ -49,6 +49,19 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
       </head>
       <body className="min-h-full bg-background text-foreground">
+        <script dangerouslySetInnerHTML={{ __html: `
+  window.addEventListener('error', (e) => {
+    document.body.innerHTML = '<pre style="padding:1rem;white-space:pre-wrap;font-size:12px">' 
+      + 'ERROR: ' + e.message + '\\nat ' + (e.filename||'?') + ':' + e.lineno
+      + '\\n\\nUA: ' + navigator.userAgent + '</pre>'
+  })
+  window.addEventListener('unhandledrejection', (e) => {
+    document.body.innerHTML = '<pre style="padding:1rem;white-space:pre-wrap;font-size:12px">' 
+      + 'UNHANDLED REJECTION: ' + (e.reason && e.reason.message || e.reason)
+      + '\\n\\nUA: ' + navigator.userAgent + '</pre>'
+  })
+`}} />
+
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             {children}
