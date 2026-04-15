@@ -123,6 +123,7 @@ export function CategoryPieChart() {
                   paddingAngle={2}
                   dataKey="value"
                   strokeWidth={0}
+                  isAnimationActive={false}
                   onMouseEnter={(_, index) => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
