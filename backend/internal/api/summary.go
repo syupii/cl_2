@@ -68,10 +68,22 @@ func buildSummary(
 	}
 
 	for _, s := range active {
+		isExpenseItem := s.PlanName.Valid && s.PlanName.String == "__expense__"
+
 		// 支出（plan_name = '__expense__'）はサブスク集計から除外する。
-		// 支出は BudgetView で独立して管理されるため、ダッシュボードの
-		// カテゴリ円グラフやトレンドバーにはサブスクのみを含める。
-		if s.PlanName.Valid && s.PlanName.String == "__expense__" {
+		// ただし "once"（一回払い）の支出だけは「今月の月額合計 KPI」に
+		// 満額を加算する — 一回払いは月次に按分せず、実際に発生した月の
+		// 負担として総額をそのまま計上する方が自然なため。
+		// カテゴリ円グラフ・トレンドバーには引き続き含めない
+		// （1 件ごとの突発支出は再発性のグラフには馴染まない）。
+		if isExpenseItem {
+			if s.BillingCycle == money.CycleOnce {
+				fullJPY, err := conv.ToJPY(s.Price, s.Currency)
+				if err != nil {
+					return SummaryResponse{}, err
+				}
+				total = total.Add(fullJPY.Round(0))
+			}
 			continue
 		}
 

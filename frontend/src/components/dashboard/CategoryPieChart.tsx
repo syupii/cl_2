@@ -29,11 +29,14 @@ export function CategoryPieChart() {
   const [viewMode, setViewMode] = useState<ViewMode>('monthly')
 
   // 月額換算ビュー: summary API の monthly_cost_jpy ベース（yearly は ÷12 済み）
-  const monthlyChartData = (data?.category_breakdown ?? []).map((cat) => ({
-    name: cat.category ?? '未分類',
-    value: parseInt(cat.amount_jpy ?? '0', 10),
-    count: cat.count ?? 0,
-  }))
+  // 金額 0 のカテゴリ（once のみで構成される等）はグラフに出さない。
+  const monthlyChartData = (data?.category_breakdown ?? [])
+    .map((cat) => ({
+      name: cat.category ?? '未分類',
+      value: parseInt(cat.amount_jpy ?? '0', 10),
+      count: cat.count ?? 0,
+    }))
+    .filter((d) => d.value > 0)
 
   // 実費ビュー: サブスクリプションの実際の請求額
   // yearly → monthly_cost_jpy × 12 で年額を復元、monthly → monthly_cost_jpy そのまま

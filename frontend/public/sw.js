@@ -4,13 +4,23 @@
 //   - API calls (backend) → network-first, cache fallback (read-only offline)
 //   - Next.js build assets (_next/static) → cache-first
 
-const CACHE_VERSION = 'v1'
+// Bump the version whenever sw.js logic changes so returning clients pick
+// up the new SW immediately (old caches are purged in the activate step).
+const CACHE_VERSION = 'v2'
 const STATIC_CACHE = `subscrip-static-${CACHE_VERSION}`
 const API_CACHE = `subscrip-api-${CACHE_VERSION}`
 const ALL_CACHES = [STATIC_CACHE, API_CACHE]
 
-// Pages to pre-cache on install
-const PRECACHE_URLS = ['/dashboard', '/login']
+// Pages to pre-cache on install. Any /dashboard/* route should be listed
+// here so that an iOS Safari reload on those pages can always fall back to
+// a cached shell if the network fetch fails or returns an error response.
+const PRECACHE_URLS = [
+  '/dashboard',
+  '/dashboard/subscriptions',
+  '/dashboard/budget',
+  '/dashboard/calendar',
+  '/login',
+]
 
 // ── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -96,14 +106,39 @@ async function networkFirstAPI(request) {
 async function networkFirstPage(request) {
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    // Only cache successful, basic (non-opaque, non-redirected) responses.
+    // iOS Safari occasionally chokes on cached redirects when reloading.
+    if (response.ok && response.type === 'basic' && !response.redirected) {
       const cache = await caches.open(STATIC_CACHE)
-      cache.put(request, response.clone())
+      cache.put(request, response.clone()).catch(() => {
+        // put() can reject on iOS for partial/opaque responses — ignore.
+      })
     }
     return response
   } catch {
+    // Network failed (flaky mobile connection, iOS Safari backgrounding,
+    // etc.). Try cache for this exact page first, then fall back to the
+    // pre-cached SPA shells so the user sees something instead of Safari's
+    // "this page couldn't load" error. Re-throwing / re-fetching here is
+    // what caused the reload failure on iPhone.
     const cached = await caches.match(request)
-    return cached ?? fetch(request)
+    if (cached) return cached
+
+    const dashboardShell = await caches.match('/dashboard')
+    if (dashboardShell) return dashboardShell
+
+    const loginShell = await caches.match('/login')
+    if (loginShell) return loginShell
+
+    return new Response(
+      '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>オフライン</title></head><body style="font-family:sans-serif;padding:2rem;">'
+        + '<h1>オフラインです</h1>'
+        + '<p>ネットワーク接続を確認して、もう一度お試しください。</p>'
+        + '</body></html>',
+      { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    )
   }
 }
 
