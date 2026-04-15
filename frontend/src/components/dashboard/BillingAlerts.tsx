@@ -10,6 +10,13 @@ import type { SubscriptionDTO } from '@/lib/api-client'
 
 const DEFAULT_DAYS = 7
 
+// iOS Safari (mobile) は Notification API 自体を公開していないため、
+// `Notification` というグローバル変数への素の参照は ReferenceError を
+// 投げる。必ずこのヘルパー越しにアクセスする。
+function notificationsSupported(): boolean {
+  return typeof window !== 'undefined' && 'Notification' in window
+}
+
 function getDays(): number {
   if (typeof window === 'undefined') return DEFAULT_DAYS
   const n = parseInt(localStorage.getItem(STORAGE_KEYS.BILLING_ALERT_DAYS) ?? '', 10)
@@ -17,7 +24,7 @@ function getDays(): number {
 }
 
 function fireBrowserNotification(subs: SubscriptionDTO[]) {
-  if (typeof window === 'undefined' || !('Notification' in window)) return
+  if (!notificationsSupported()) return
   if (Notification.permission !== 'granted') return
   subs.forEach((s) => {
     const days = daysUntil(s.next_billing_date)
@@ -37,12 +44,15 @@ export function BillingAlerts() {
   const [warnDays, setWarnDays] = useState(DEFAULT_DAYS)
   const [editingDays, setEditingDays] = useState(false)
   const [daysInput, setDaysInput] = useState(String(DEFAULT_DAYS))
+  const [notifSupported, setNotifSupported] = useState(false)
 
   useEffect(() => {
     const saved = getDays()
     setWarnDays(saved)
     setDaysInput(String(saved))
-    if (typeof window !== 'undefined' && 'Notification' in window) {
+    const supported = notificationsSupported()
+    setNotifSupported(supported)
+    if (supported) {
       setNotifPermission(Notification.permission)
     }
   }, [])
@@ -70,6 +80,7 @@ export function BillingAlerts() {
   // Fire browser notification once per session when there are upcoming bills
   useEffect(() => {
     if (upcoming.length === 0) return
+    if (!notificationsSupported()) return
     const key = 'billing_notif_fired'
     if (sessionStorage.getItem(key)) return
     if (Notification.permission === 'granted') {
@@ -79,7 +90,7 @@ export function BillingAlerts() {
   }, [upcoming])
 
   async function requestPermission() {
-    if (!('Notification' in window)) return
+    if (!notificationsSupported()) return
     const perm = await Notification.requestPermission()
     setNotifPermission(perm)
     if (perm === 'granted' && upcoming.length > 0) {
@@ -117,7 +128,7 @@ export function BillingAlerts() {
               >
                 <Settings2 className="h-3.5 w-3.5" />
               </Button>
-              {notifPermission !== 'denied' && (
+              {notifSupported && notifPermission !== 'denied' && (
                 <Button
                   variant="ghost" size="icon"
                   className="h-7 w-7 text-amber-700 hover:text-amber-900 dark:text-amber-400"
