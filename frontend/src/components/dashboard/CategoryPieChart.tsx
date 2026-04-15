@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSummary } from '@/hooks/useSummary'
-import { useSubscriptions } from '@/hooks/useSubscriptions'
-import { formatJPY, isExpense, isOnceExpense } from '@/lib/utils'
+import { formatJPY } from '@/lib/utils'
 
 const COLORS = [
   '#6366f1', // indigo
@@ -20,16 +19,16 @@ const COLORS = [
   '#f59e0b', // amber
 ]
 
-const CARD_TITLE = '月額サブスク内訳'
+const CARD_TITLE = 'サブスク月額（カテゴリ別）'
 
 export function CategoryPieChart() {
-  const { data, isLoading: summaryLoading } = useSummary()
-  const { data: subscriptions = [], isLoading: subsLoading } = useSubscriptions()
+  const { data, isLoading } = useSummary()
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   // 円グラフはサブスクのみ（月額換算）。
   // summary.category_breakdown はバックエンド側で expense 行を除外し、
-  // yearly は ÷12 済みの月額を返すのでそのまま使える。
+  // yearly は ÷12 済みの月額を返すのでそのまま使える。支出はこのカードに
+  // 一切含めない（支出は「支出管理」ビューで別枠管理）。
   const chartData = (data?.category_breakdown ?? [])
     .map((cat) => ({
       name: cat.category ?? '未分類',
@@ -38,20 +37,7 @@ export function CategoryPieChart() {
     }))
     .filter((d) => d.value > 0)
 
-  // 中央に表示する合計: サブスク月額 + 支出（recurring）の月額。
-  // once（一回払い）は毎月発生しないのでここでは足さない。
   const subsMonthly = chartData.reduce((sum, d) => sum + d.value, 0)
-  const expensesMonthly = useMemo(() => {
-    let total = 0
-    for (const s of subscriptions) {
-      if (!isExpense(s) || s.status !== 'active' || isOnceExpense(s)) continue
-      total += parseInt(s.monthly_cost_jpy ?? '0', 10)
-    }
-    return total
-  }, [subscriptions])
-  const combinedMonthly = subsMonthly + expensesMonthly
-
-  const isLoading = summaryLoading || subsLoading
   const hovered = hoveredIndex !== null ? chartData[hoveredIndex] : null
 
   if (isLoading) {
@@ -116,7 +102,7 @@ export function CategoryPieChart() {
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Center display: combined monthly total or hovered item */}
+            {/* Center display: subscription monthly total or hovered item */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-2 text-center">
               {hovered ? (
                 <>
@@ -130,11 +116,8 @@ export function CategoryPieChart() {
                 </>
               ) : (
                 <>
-                  <span className="text-[10px] text-muted-foreground">月額合計</span>
-                  <span className="text-sm font-bold leading-tight">{formatJPY(combinedMonthly)}</span>
-                  <span className="text-[9px] leading-tight text-muted-foreground">
-                    サブスク＋支出
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">サブスク月額</span>
+                  <span className="text-sm font-bold leading-tight">{formatJPY(subsMonthly)}</span>
                 </>
               )}
             </div>
@@ -162,22 +145,6 @@ export function CategoryPieChart() {
                 </div>
               )
             })}
-
-            {/* Combined total footer: subs + recurring expenses */}
-            <div className="mt-2 space-y-1 border-t pt-2 text-xs">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span>サブスク月額</span>
-                <span className="tabular-nums">{formatJPY(subsMonthly)}</span>
-              </div>
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span>支出月額</span>
-                <span className="tabular-nums">{formatJPY(expensesMonthly)}</span>
-              </div>
-              <div className="flex items-center justify-between font-medium">
-                <span>合計</span>
-                <span className="tabular-nums">{formatJPY(combinedMonthly)}</span>
-              </div>
-            </div>
           </div>
         </div>
       </CardContent>
