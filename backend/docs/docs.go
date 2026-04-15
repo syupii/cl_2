@@ -15,6 +15,99 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/payment-methods": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-methods"
+                ],
+                "summary": "List payment methods",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-methods"
+                ],
+                "summary": "Create payment method",
+                "parameters": [
+                    {
+                        "description": "Payment method",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CreatePaymentMethodRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment-methods/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-methods"
+                ],
+                "summary": "Delete payment method",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment method ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/subscriptions": {
             "get": {
                 "security": [
@@ -211,6 +304,52 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Permanently delete a subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "subscription id (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
             }
         },
         "/summary": {
@@ -310,6 +449,69 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/templates/plans/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Update the price of a service plan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "plan id (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new price",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdatePlanPriceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -344,6 +546,14 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.CreatePaymentMethodRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.CreateSubscriptionRequest": {
             "type": "object",
             "properties": {
@@ -366,6 +576,10 @@ const docTemplate = `{
                 "next_billing_date": {
                     "type": "string",
                     "example": "2026-05-01"
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "家族プラン"
                 },
                 "payment_method": {
                     "type": "string",
@@ -485,6 +699,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2026-05-01"
                 },
+                "notes": {
+                    "type": "string",
+                    "example": "家族プラン"
+                },
                 "payment_method": {
                     "type": "string",
                     "example": "Visa ****1234"
@@ -538,7 +756,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/internal_api.MonthlyTrendPoint"
                     }
                 },
+                "once_total_jpy": {
+                    "description": "OnceTotalJPY is the sum of full prices of all active \"once\" expenses,\nin JPY. The frontend adds this on top of the monthly KPI but does NOT\nmultiply it by 12 when computing annual cost.",
+                    "type": "string",
+                    "example": "5000"
+                },
                 "total_monthly_jpy": {
+                    "description": "TotalMonthlyJPY is the recurring monthly burden in JPY: monthly subs at\nfull price, yearly subs divided by 12. One-time (once) expenses are NOT\nincluded here — they are surfaced separately as OnceTotalJPY so the\nfrontend can decide whether to annualise ×12 or not.",
                     "type": "string",
                     "example": "7680"
                 }
@@ -567,6 +791,19 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.UpdatePlanPriceRequest": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "JPY"
+                },
+                "default_price": {
+                    "type": "string",
+                    "example": "1490"
+                }
+            }
+        },
         "internal_api.UpdateSubscriptionRequest": {
             "type": "object",
             "properties": {
@@ -589,6 +826,10 @@ const docTemplate = `{
                 "next_billing_date": {
                     "type": "string",
                     "example": "2026-05-01"
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "家族プラン"
                 },
                 "payment_method": {
                     "type": "string",

@@ -22,6 +22,11 @@ definitions:
         example: 3
         type: integer
     type: object
+  internal_api.CreatePaymentMethodRequest:
+    properties:
+      name:
+        type: string
+    type: object
   internal_api.CreateSubscriptionRequest:
     properties:
       billing_cycle:
@@ -38,6 +43,9 @@ definitions:
         type: string
       next_billing_date:
         example: "2026-05-01"
+        type: string
+      notes:
+        example: 家族プラン
         type: string
       payment_method:
         example: Visa ****1234
@@ -125,6 +133,9 @@ definitions:
       next_billing_date:
         example: "2026-05-01"
         type: string
+      notes:
+        example: 家族プラン
+        type: string
       payment_method:
         example: Visa ****1234
         type: string
@@ -163,7 +174,19 @@ definitions:
         items:
           $ref: '#/definitions/internal_api.MonthlyTrendPoint'
         type: array
+      once_total_jpy:
+        description: |-
+          OnceTotalJPY is the sum of full prices of all active "once" expenses,
+          in JPY. The frontend adds this on top of the monthly KPI but does NOT
+          multiply it by 12 when computing annual cost.
+        example: "5000"
+        type: string
       total_monthly_jpy:
+        description: |-
+          TotalMonthlyJPY is the recurring monthly burden in JPY: monthly subs at
+          full price, yearly subs divided by 12. One-time (once) expenses are NOT
+          included here — they are surfaced separately as OnceTotalJPY so the
+          frontend can decide whether to annualise ×12 or not.
         example: "7680"
         type: string
     type: object
@@ -183,6 +206,15 @@ definitions:
           $ref: '#/definitions/internal_api.PlanDTO'
         type: array
     type: object
+  internal_api.UpdatePlanPriceRequest:
+    properties:
+      currency:
+        example: JPY
+        type: string
+      default_price:
+        example: "1490"
+        type: string
+    type: object
   internal_api.UpdateSubscriptionRequest:
     properties:
       billing_cycle:
@@ -199,6 +231,9 @@ definitions:
         type: string
       next_billing_date:
         example: "2026-05-01"
+        type: string
+      notes:
+        example: 家族プラン
         type: string
       payment_method:
         example: Visa ****1234
@@ -228,6 +263,62 @@ info:
   title: Subscription Dashboard API
   version: "1.0"
 paths:
+  /payment-methods:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: List payment methods
+      tags:
+      - payment-methods
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payment method
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.CreatePaymentMethodRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Create payment method
+      tags:
+      - payment-methods
+  /payment-methods/{id}:
+    delete:
+      parameters:
+      - description: Payment method ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete payment method
+      tags:
+      - payment-methods
   /subscriptions:
     get:
       description: |-
@@ -302,6 +393,35 @@ paths:
       tags:
       - subscriptions
   /subscriptions/{id}:
+    delete:
+      parameters:
+      - description: subscription id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Permanently delete a subscription
+      tags:
+      - subscriptions
     put:
       consumes:
       - application/json
@@ -412,6 +532,46 @@ paths:
       security:
       - BearerAuth: []
       summary: List subscription templates
+      tags:
+      - templates
+  /templates/plans/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: plan id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: new price
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdatePlanPriceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_syupii_cl_2_backend_internal_httpx.Response'
+      security:
+      - BearerAuth: []
+      summary: Update the price of a service plan
       tags:
       - templates
 securityDefinitions:

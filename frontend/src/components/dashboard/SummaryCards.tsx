@@ -34,12 +34,17 @@ export function SummaryCards() {
     setEditingBudget(false)
   }
 
-  const totalMonthly = parseInt(data?.total_monthly_jpy ?? '0', 10)
-  const annualCost = totalMonthly * 12
+  // total_monthly_jpy は recurring（毎月・年額）のみ。once（一回払い）は別フィールド。
+  const recurringMonthly = parseInt(data?.total_monthly_jpy ?? '0', 10)
+  const onceTotal = parseInt(data?.once_total_jpy ?? '0', 10)
+  // 月額表示は「recurring 月額 + once 満額」。once は月次按分しない。
+  const displayedMonthly = recurringMonthly + onceTotal
+  // 年間コストは recurring のみ ×12、once は 1 回限りなのでそのまま加算。
+  const annualCost = recurringMonthly * 12 + onceTotal
   // サブスクのみカウント（支出・一回払いを除外）
   const activeCount = subscriptions.filter((s) => isSubscription(s) && s.status === 'active').length
   const categoryCount = data?.category_breakdown?.length ?? 0
-  const overBudget = budget !== null && totalMonthly > budget
+  const overBudget = budget !== null && displayedMonthly > budget
 
   // 前月比（monthly_trend の末尾2件から計算）
   const trend = data?.monthly_trend ?? []
@@ -73,7 +78,7 @@ export function SummaryCards() {
       {/* 予算超過警告 */}
       {overBudget && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          ⚠️ 月間予算（{formatJPY(budget!)}）を <strong>{formatJPY(totalMonthly - budget!)}</strong> 超過しています
+          ⚠️ 月間予算（{formatJPY(budget!)}）を <strong>{formatJPY(displayedMonthly - budget!)}</strong> 超過しています
         </div>
       )}
 
@@ -88,9 +93,13 @@ export function SummaryCards() {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className={`text-xl font-bold tracking-tight sm:text-3xl ${overBudget ? 'text-destructive' : ''}`}>
-              {formatJPY(totalMonthly)}
+              {formatJPY(displayedMonthly)}
             </p>
-            {trendPct !== null ? (
+            {onceTotal > 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                内 一時費 {formatJPY(onceTotal)}
+              </p>
+            ) : trendPct !== null ? (
               <p className={`mt-1 text-xs font-medium ${trendPct > 0 ? 'text-destructive' : trendPct < 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                 {trendPct > 0 ? '▲' : trendPct < 0 ? '▼' : '─'} {Math.abs(trendPct)}% 前月比
               </p>
@@ -112,7 +121,9 @@ export function SummaryCards() {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className="text-xl font-bold tracking-tight sm:text-3xl">{formatJPY(annualCost)}</p>
-            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">月額 × 12 ヶ月</p>
+            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+              {onceTotal > 0 ? '月額 × 12 + 一時費' : '月額 × 12 ヶ月'}
+            </p>
           </CardContent>
         </Card>
 

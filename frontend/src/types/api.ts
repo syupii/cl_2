@@ -266,6 +266,8 @@ export interface definitions {
     /** @example JPY */
     currency?: string;
     monthly_trend?: definitions["internal_api.MonthlyTrendPoint"][];
+    /** @example 5000 */
+    once_total_jpy?: string;
     /** @example 7680 */
     total_monthly_jpy?: string;
   };
