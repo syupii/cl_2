@@ -9,7 +9,7 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 import { formatDate, daysUntil, isExpense } from '@/lib/utils'
 import { STORAGE_KEYS } from '@/lib/constants'
 
-const DEFAULT_WARN_DAYS = 30
+const DEFAULT_WARN_DAYS = 7
 
 function loadDismissed(): Record<string, string> {
   if (typeof window === 'undefined') return {}

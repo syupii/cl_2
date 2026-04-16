@@ -101,6 +101,7 @@ export function BudgetView() {
           billing_cycle: sub.billing_cycle,
           next_billing_date: sub.next_billing_date ?? '',
           category: sub.category ?? undefined,
+          payment_method: sub.payment_method ?? undefined,
           notes: sub.notes ?? undefined,
           status: 'active',
         },
