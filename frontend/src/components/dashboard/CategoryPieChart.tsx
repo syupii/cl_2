@@ -25,10 +25,11 @@ export function CategoryPieChart() {
   const { data: subscriptions = [], isLoading } = useSubscriptions()
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  // 円グラフはサブスクのみ。once は毎月発生しないので除外。
-  // monthly_cost_jpy はバックエンドで yearly ÷ 12、once 0 済みの値。
-  // 支出の合計も同じ subscriptions 配列から取るので、キャッシュの
-  // 同期ずれで支出月額だけ 0 になる問題を避けられる。
+  // 円グラフはサブスクのみ（once は毎月発生しないので除外）。
+  // 支出側は BudgetView の「今月の支出合計」と揃える:
+  //   - recurring (monthly/yearly) : monthly_cost_jpy をそのまま加算
+  //   - once (一回払い)            : price の全額を加算
+  // これで、今月の一回払い支出も「支出月額」に反映される。
   const { chartData, subsMonthly, expensesMonthly } = useMemo(() => {
     const catMap = new Map<string, { value: number; count: number }>()
     let expTotal = 0
@@ -37,8 +38,11 @@ export function CategoryPieChart() {
       if (s.status !== 'active') continue
 
       if (isExpense(s)) {
-        if (isOnceExpense(s)) continue
-        expTotal += parseInt(s.monthly_cost_jpy ?? '0', 10)
+        if (isOnceExpense(s)) {
+          expTotal += parseInt(s.price ?? '0', 10)
+        } else {
+          expTotal += parseInt(s.monthly_cost_jpy ?? '0', 10)
+        }
         continue
       }
 
