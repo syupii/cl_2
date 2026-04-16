@@ -19,43 +19,61 @@ const COLORS = [
   '#f59e0b', // amber
 ]
 
-const CARD_TITLE = '月額サブスク内訳'
+const CARD_TITLE = '今月のサブスク内訳'
 
 export function CategoryPieChart() {
   const { data: subscriptions = [], isLoading } = useSubscriptions()
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  // 円グラフはサブスクのみ（once は毎月発生しないので除外）。
-  // 支出側は BudgetView の「今月の支出合計」と揃える:
-  //   - recurring (monthly/yearly) : monthly_cost_jpy をそのまま加算
-  //   - once (一回払い)            : price の全額を加算
-  // これで、今月の一回払い支出も「支出月額」に反映される。
-  const { chartData, subsMonthly, expensesMonthly } = useMemo(() => {
+  // yearly サブスク/支出は「請求月のみ全額計上」。
+  //   - monthly     : price をそのまま加算
+  //   - yearly      : next_billing_date が今月なら price 全額、それ以外は 0
+  //   - once（支出） : price 全額
+  //   - once（サブスク）: 除外
+  const { chartData, subsTotal, expensesTotal } = useMemo(() => {
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const isBillingThisMonth = (s: { next_billing_date?: string | null }) =>
+      s.next_billing_date?.startsWith(currentMonth) ?? false
+
     const catMap = new Map<string, { value: number; count: number }>()
     let expTotal = 0
 
     for (const s of subscriptions) {
       if (s.status !== 'active') continue
 
+      // ── 支出 ──
       if (isExpense(s)) {
         if (isOnceExpense(s)) {
           expTotal += parseInt(s.price ?? '0', 10)
+        } else if (s.billing_cycle === 'yearly') {
+          if (isBillingThisMonth(s)) expTotal += parseInt(s.price ?? '0', 10)
         } else {
-          expTotal += parseInt(s.monthly_cost_jpy ?? '0', 10)
+          // monthly
+          expTotal += parseInt(s.price ?? '0', 10)
         }
         continue
       }
 
+      // ── サブスク ──
       if (!isSubscription(s) || isOnceExpense(s)) continue
-      const monthly = parseInt(s.monthly_cost_jpy ?? '0', 10)
-      if (monthly === 0) continue
+
+      let amount = 0
+      if (s.billing_cycle === 'yearly') {
+        if (isBillingThisMonth(s)) amount = parseInt(s.price ?? '0', 10)
+      } else {
+        // monthly
+        amount = parseInt(s.price ?? '0', 10)
+      }
+      if (amount === 0) continue
+
       const cat = s.category ?? '未分類'
       const prev = catMap.get(cat)
       if (prev) {
-        prev.value += monthly
+        prev.value += amount
         prev.count++
       } else {
-        catMap.set(cat, { value: monthly, count: 1 })
+        catMap.set(cat, { value: amount, count: 1 })
       }
     }
 
@@ -64,11 +82,11 @@ export function CategoryPieChart() {
       .filter((d) => d.value > 0)
       .sort((a, b) => a.name.localeCompare(b.name))
 
-    const subsTotal = chart.reduce((sum, d) => sum + d.value, 0)
-    return { chartData: chart, subsMonthly: subsTotal, expensesMonthly: expTotal }
+    const sTotal = chart.reduce((sum, d) => sum + d.value, 0)
+    return { chartData: chart, subsTotal: sTotal, expensesTotal: expTotal }
   }, [subscriptions])
 
-  const combinedMonthly = subsMonthly + expensesMonthly
+  const combinedTotal = subsTotal + expensesTotal
   const hovered = hoveredIndex !== null ? chartData[hoveredIndex] : null
 
   if (isLoading) {
@@ -133,7 +151,7 @@ export function CategoryPieChart() {
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Center display: combined monthly total or hovered item */}
+            {/* Center display */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-2 text-center">
               {hovered ? (
                 <>
@@ -142,13 +160,13 @@ export function CategoryPieChart() {
                   </span>
                   <span className="text-sm font-bold leading-tight">{formatJPY(hovered.value)}</span>
                   <span className="text-[10px] text-muted-foreground">
-                    {subsMonthly > 0 ? Math.round((hovered.value / subsMonthly) * 100) : 0}%
+                    {subsTotal > 0 ? Math.round((hovered.value / subsTotal) * 100) : 0}%
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="text-[10px] text-muted-foreground">月額合計</span>
-                  <span className="text-sm font-bold leading-tight">{formatJPY(combinedMonthly)}</span>
+                  <span className="text-[10px] text-muted-foreground">今月の合計</span>
+                  <span className="text-sm font-bold leading-tight">{formatJPY(combinedTotal)}</span>
                   <span className="text-[9px] leading-tight text-muted-foreground">
                     サブスク＋支出
                   </span>
@@ -160,7 +178,7 @@ export function CategoryPieChart() {
           {/* Category list (subscriptions only) */}
           <div className="min-w-0 flex-1 space-y-1.5">
             {chartData.map((d, i) => {
-              const pct = subsMonthly > 0 ? Math.round((d.value / subsMonthly) * 100) : 0
+              const pct = subsTotal > 0 ? Math.round((d.value / subsTotal) * 100) : 0
               const isHovered = hoveredIndex === i
               return (
                 <div
@@ -180,19 +198,19 @@ export function CategoryPieChart() {
               )
             })}
 
-            {/* Combined total footer: subs + recurring expenses */}
+            {/* Footer: subs + expenses */}
             <div className="mt-2 space-y-1 border-t pt-2 text-xs">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span>サブスク月額</span>
-                <span className="tabular-nums">{formatJPY(subsMonthly)}</span>
+                <span>サブスク（今月）</span>
+                <span className="tabular-nums">{formatJPY(subsTotal)}</span>
               </div>
               <div className="flex items-center justify-between text-muted-foreground">
-                <span>支出月額</span>
-                <span className="tabular-nums">{formatJPY(expensesMonthly)}</span>
+                <span>支出</span>
+                <span className="tabular-nums">{formatJPY(expensesTotal)}</span>
               </div>
               <div className="flex items-center justify-between font-medium">
                 <span>合計</span>
-                <span className="tabular-nums">{formatJPY(combinedMonthly)}</span>
+                <span className="tabular-nums">{formatJPY(combinedTotal)}</span>
               </div>
             </div>
           </div>
