@@ -3,9 +3,8 @@
 import { useState, useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useSummary } from '@/hooks/useSummary'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
-import { formatJPY, isExpense, isOnceExpense } from '@/lib/utils'
+import { formatJPY, isExpense, isSubscription, isOnceExpense } from '@/lib/utils'
 
 const COLORS = [
   '#6366f1', // indigo
@@ -23,35 +22,49 @@ const COLORS = [
 const CARD_TITLE = '月額サブスク内訳'
 
 export function CategoryPieChart() {
-  const { data, isLoading: summaryLoading } = useSummary()
-  const { data: subscriptions = [], isLoading: subsLoading } = useSubscriptions()
+  const { data: subscriptions = [], isLoading } = useSubscriptions()
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  // 円グラフはサブスクのみ（月額換算）。
-  // summary.category_breakdown はバックエンド側で expense 行を除外し、
-  // yearly は ÷12 済みの月額を返すのでそのまま使える。
-  const chartData = (data?.category_breakdown ?? [])
-    .map((cat) => ({
-      name: cat.category ?? '未分類',
-      value: parseInt(cat.amount_jpy ?? '0', 10),
-      count: cat.count ?? 0,
-    }))
-    .filter((d) => d.value > 0)
+  // 円グラフはサブスクのみ。once は毎月発生しないので除外。
+  // monthly_cost_jpy はバックエンドで yearly ÷ 12、once 0 済みの値。
+  // 支出の合計も同じ subscriptions 配列から取るので、キャッシュの
+  // 同期ずれで支出月額だけ 0 になる問題を避けられる。
+  const { chartData, subsMonthly, expensesMonthly } = useMemo(() => {
+    const catMap = new Map<string, { value: number; count: number }>()
+    let expTotal = 0
 
-  // 中央に表示する合計: サブスク月額 + 支出（recurring）の月額。
-  // once（一回払い）は毎月発生しないのでここでは足さない。
-  const subsMonthly = chartData.reduce((sum, d) => sum + d.value, 0)
-  const expensesMonthly = useMemo(() => {
-    let total = 0
     for (const s of subscriptions) {
-      if (!isExpense(s) || s.status !== 'active' || isOnceExpense(s)) continue
-      total += parseInt(s.monthly_cost_jpy ?? '0', 10)
-    }
-    return total
-  }, [subscriptions])
-  const combinedMonthly = subsMonthly + expensesMonthly
+      if (s.status !== 'active') continue
 
-  const isLoading = summaryLoading || subsLoading
+      if (isExpense(s)) {
+        if (isOnceExpense(s)) continue
+        expTotal += parseInt(s.monthly_cost_jpy ?? '0', 10)
+        continue
+      }
+
+      if (!isSubscription(s) || isOnceExpense(s)) continue
+      const monthly = parseInt(s.monthly_cost_jpy ?? '0', 10)
+      if (monthly === 0) continue
+      const cat = s.category ?? '未分類'
+      const prev = catMap.get(cat)
+      if (prev) {
+        prev.value += monthly
+        prev.count++
+      } else {
+        catMap.set(cat, { value: monthly, count: 1 })
+      }
+    }
+
+    const chart = [...catMap.entries()]
+      .map(([name, { value, count }]) => ({ name, value, count }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    const subsTotal = chart.reduce((sum, d) => sum + d.value, 0)
+    return { chartData: chart, subsMonthly: subsTotal, expensesMonthly: expTotal }
+  }, [subscriptions])
+
+  const combinedMonthly = subsMonthly + expensesMonthly
   const hovered = hoveredIndex !== null ? chartData[hoveredIndex] : null
 
   if (isLoading) {
