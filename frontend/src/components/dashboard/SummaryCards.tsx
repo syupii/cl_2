@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TrendingUp, CreditCard, Activity, CalendarDays, Settings2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSummary } from '@/hooks/useSummary'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
-import { formatJPY, isSubscription } from '@/lib/utils'
+import { formatJPY, isSubscription, isExpense, isOnceExpense } from '@/lib/utils'
 import { loadBudget } from '@/lib/localStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
+
+type CostView = 'actual' | 'averaged'
 
 export function SummaryCards() {
   const { data, isLoading } = useSummary()
@@ -17,6 +19,7 @@ export function SummaryCards() {
   const [budget, setBudget] = useState<number | null>(null)
   const [editingBudget, setEditingBudget] = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
+  const [costView, setCostView] = useState<CostView>('actual')
 
   useEffect(() => {
     setBudget(loadBudget())
@@ -34,12 +37,46 @@ export function SummaryCards() {
     setEditingBudget(false)
   }
 
-  // total_monthly_jpy は recurring（毎月・年額）のみ。once（一回払い）は別フィールド。
+  // ── 月額換算（averaged）: summary API の total_monthly_jpy ベース ──
   const recurringMonthly = parseInt(data?.total_monthly_jpy ?? '0', 10)
   const onceTotal = parseInt(data?.once_total_jpy ?? '0', 10)
-  // 月額表示は「recurring 月額 + once 満額」。once は月次按分しない。
-  const displayedMonthly = recurringMonthly + onceTotal
-  // 年間コストは recurring のみ ×12、once は 1 回限りなのでそのまま加算。
+  const averagedMonthly = recurringMonthly + onceTotal
+
+  // ── 実際の今月負担（actual）: 請求月のみ全額計上 ──
+  const actualMonthly = useMemo(() => {
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const isBillingThisMonth = (s: { next_billing_date?: string | null }) =>
+      s.next_billing_date?.startsWith(currentMonth) ?? false
+
+    let total = 0
+    for (const s of subscriptions) {
+      if (s.status !== 'active') continue
+
+      if (isExpense(s)) {
+        if (isOnceExpense(s)) {
+          total += parseInt(s.price ?? '0', 10)
+        } else if (s.billing_cycle === 'yearly') {
+          if (isBillingThisMonth(s)) total += parseInt(s.price ?? '0', 10)
+        } else {
+          total += parseInt(s.price ?? '0', 10)
+        }
+        continue
+      }
+
+      if (!isSubscription(s)) continue
+      const monthlyJPY = parseInt(s.monthly_cost_jpy ?? '0', 10)
+      if (s.billing_cycle === 'yearly') {
+        if (isBillingThisMonth(s)) total += monthlyJPY * 12
+      } else if (s.billing_cycle === 'monthly') {
+        total += monthlyJPY
+      }
+    }
+    return total
+  }, [subscriptions])
+
+  const displayedMonthly = costView === 'actual' ? actualMonthly : averagedMonthly
+  // 年間コストは月額換算ベース: recurring ×12、once はそのまま加算。
   const annualCost = recurringMonthly * 12 + onceTotal
   // サブスクのみカウント（支出・一回払いを除外）
   const activeCount = subscriptions.filter((s) => isSubscription(s) && s.status === 'active').length
@@ -83,19 +120,36 @@ export function SummaryCards() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {/* 月間実質負担額 */}
+        {/* 月間負担額 */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between p-3 pb-2 sm:p-6 sm:pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
-              月間実質負担額
+              {costView === 'actual' ? '今月の負担額' : '月間実質負担額'}
             </CardTitle>
-            <TrendingUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
+            <div className="flex shrink-0 overflow-hidden rounded-md border text-[10px]">
+              <button
+                className={`px-1.5 py-0.5 transition-colors ${costView === 'actual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                onClick={() => setCostView('actual')}
+              >
+                実額
+              </button>
+              <button
+                className={`px-1.5 py-0.5 transition-colors ${costView === 'averaged' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                onClick={() => setCostView('averaged')}
+              >
+                月額換算
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <p className={`text-xl font-bold tracking-tight sm:text-3xl ${overBudget ? 'text-destructive' : ''}`}>
               {formatJPY(displayedMonthly)}
             </p>
-            {onceTotal > 0 ? (
+            {costView === 'actual' ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                請求月のみ計上
+              </p>
+            ) : onceTotal > 0 ? (
               <p className="mt-1 text-xs text-muted-foreground">
                 内 一時費 {formatJPY(onceTotal)}
               </p>
