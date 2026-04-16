@@ -56,14 +56,17 @@ export function CategoryPieChart() {
       }
 
       // ── サブスク ──
+      // price は元通貨のままなので、JPY 換算済みの monthly_cost_jpy を使う。
+      // yearly の場合は monthly_cost_jpy（= 年額 ÷ 12）を × 12 して全額に戻す。
       if (!isSubscription(s) || isOnceExpense(s)) continue
 
+      const monthlyJPY = parseInt(s.monthly_cost_jpy ?? '0', 10)
       let amount = 0
       if (s.billing_cycle === 'yearly') {
-        if (isBillingThisMonth(s)) amount = parseInt(s.price ?? '0', 10)
+        if (isBillingThisMonth(s)) amount = monthlyJPY * 12
       } else {
         // monthly
-        amount = parseInt(s.price ?? '0', 10)
+        amount = monthlyJPY
       }
       if (amount === 0) continue
 
