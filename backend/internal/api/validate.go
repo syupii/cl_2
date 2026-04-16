@@ -94,3 +94,15 @@ func validateStatus(status string) (string, error) {
 		return "", errors.New(`status must be "active" or "cancelled"`)
 	}
 }
+
+// validateTrialEndDate checks that an optional trial_end_date is in YYYY-MM-DD
+// format. A nil pointer is valid (no trial end date).
+func validateTrialEndDate(s *string) error {
+	if s == nil {
+		return nil
+	}
+	if _, err := parseDate(*s); err != nil {
+		return errors.New("trial_end_date must be YYYY-MM-DD")
+	}
+	return nil
+}

@@ -58,6 +58,7 @@ RETURNING
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     notes,
@@ -85,6 +86,7 @@ func (q *Queries) CancelUserSubscription(ctx context.Context, arg CancelUserSubs
 		&i.Currency,
 		&i.BillingCycle,
 		&i.NextBillingDate,
+		&i.TrialEndDate,
 		&i.Category,
 		&i.PaymentMethod,
 		&i.Notes,
@@ -107,9 +109,10 @@ INSERT INTO public.user_subscriptions (
     category,
     payment_method,
     notes,
-    status
+    status,
+    trial_end_date
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 )
 RETURNING
     id,
@@ -120,6 +123,7 @@ RETURNING
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     notes,
@@ -140,6 +144,7 @@ type CreateUserSubscriptionParams struct {
 	PaymentMethod   pgtype.Text     `json:"payment_method"`
 	Notes           pgtype.Text     `json:"notes"`
 	Status          string          `json:"status"`
+	TrialEndDate    pgtype.Date     `json:"trial_end_date"`
 }
 
 // Insert a new subscription. user_id is always set from the JWT claim, never
@@ -158,6 +163,7 @@ func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubs
 		arg.PaymentMethod,
 		arg.Notes,
 		arg.Status,
+		arg.TrialEndDate,
 	)
 	var i UserSubscription
 	err := row.Scan(
@@ -169,6 +175,7 @@ func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubs
 		&i.Currency,
 		&i.BillingCycle,
 		&i.NextBillingDate,
+		&i.TrialEndDate,
 		&i.Category,
 		&i.PaymentMethod,
 		&i.Notes,
@@ -189,6 +196,7 @@ SELECT
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     notes,
@@ -218,6 +226,7 @@ func (q *Queries) GetUserSubscription(ctx context.Context, arg GetUserSubscripti
 		&i.Currency,
 		&i.BillingCycle,
 		&i.NextBillingDate,
+		&i.TrialEndDate,
 		&i.Category,
 		&i.PaymentMethod,
 		&i.Notes,
@@ -238,6 +247,7 @@ SELECT
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     notes,
@@ -269,6 +279,7 @@ func (q *Queries) ListActiveUserSubscriptions(ctx context.Context, userID uuid.U
 			&i.Currency,
 			&i.BillingCycle,
 			&i.NextBillingDate,
+			&i.TrialEndDate,
 			&i.Category,
 			&i.PaymentMethod,
 			&i.Notes,
@@ -439,6 +450,7 @@ SELECT
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     notes,
@@ -473,6 +485,7 @@ func (q *Queries) ListUserSubscriptions(ctx context.Context, userID uuid.UUID) (
 			&i.Currency,
 			&i.BillingCycle,
 			&i.NextBillingDate,
+			&i.TrialEndDate,
 			&i.Category,
 			&i.PaymentMethod,
 			&i.Notes,
@@ -616,7 +629,8 @@ SET
     category          = $9,
     payment_method    = $10,
     notes             = $11,
-    status            = $12
+    status            = $12,
+    trial_end_date    = $13
 WHERE id = $1
   AND user_id = $2
 RETURNING
@@ -628,6 +642,7 @@ RETURNING
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     notes,
@@ -649,6 +664,7 @@ type UpdateUserSubscriptionParams struct {
 	PaymentMethod   pgtype.Text     `json:"payment_method"`
 	Notes           pgtype.Text     `json:"notes"`
 	Status          string          `json:"status"`
+	TrialEndDate    pgtype.Date     `json:"trial_end_date"`
 }
 
 // Full update (PUT /subscriptions/:id). Callers must send the complete object.
@@ -667,6 +683,7 @@ func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubs
 		arg.PaymentMethod,
 		arg.Notes,
 		arg.Status,
+		arg.TrialEndDate,
 	)
 	var i UserSubscription
 	err := row.Scan(
@@ -678,6 +695,7 @@ func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubs
 		&i.Currency,
 		&i.BillingCycle,
 		&i.NextBillingDate,
+		&i.TrialEndDate,
 		&i.Category,
 		&i.PaymentMethod,
 		&i.Notes,

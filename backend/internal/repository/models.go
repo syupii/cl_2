@@ -56,7 +56,9 @@ type UserSubscription struct {
 	BillingCycle string `json:"billing_cycle"`
 	// Next scheduled charge date.
 	NextBillingDate time.Time   `json:"next_billing_date"`
-	Category        pgtype.Text `json:"category"`
+	// Optional free-trial end date. NULL for regular paid subscriptions.
+	TrialEndDate  pgtype.Date `json:"trial_end_date"`
+	Category      pgtype.Text `json:"category"`
 	PaymentMethod   pgtype.Text `json:"payment_method"`
 	Notes           pgtype.Text `json:"notes"`
 	// Soft-deletion flag. "active" or "cancelled". We never DELETE rows.

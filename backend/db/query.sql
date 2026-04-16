@@ -71,6 +71,7 @@ SELECT
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     status,
@@ -91,6 +92,7 @@ SELECT
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     status,
@@ -112,6 +114,7 @@ SELECT
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     status,
@@ -135,9 +138,10 @@ INSERT INTO public.user_subscriptions (
     next_billing_date,
     category,
     payment_method,
-    status
+    status,
+    trial_end_date
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 RETURNING
     id,
@@ -148,6 +152,7 @@ RETURNING
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     status,
@@ -167,7 +172,8 @@ SET
     next_billing_date = $8,
     category          = $9,
     payment_method    = $10,
-    status            = $11
+    status            = $11,
+    trial_end_date    = $12
 WHERE id = $1
   AND user_id = $2
 RETURNING
@@ -179,6 +185,7 @@ RETURNING
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     status,
@@ -201,6 +208,7 @@ RETURNING
     currency,
     billing_cycle,
     next_billing_date,
+    trial_end_date,
     category,
     payment_method,
     status,

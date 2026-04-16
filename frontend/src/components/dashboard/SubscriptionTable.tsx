@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ServiceIcon } from '@/components/ui/service-icon'
 import { useSubscriptions, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
 import type { SubscriptionDTO } from '@/lib/api-client'
 import { formatJPY, isSubscription } from '@/lib/utils'
@@ -386,6 +387,7 @@ export function SubscriptionTable() {
                       onClick={(e) => e.stopPropagation()}
                       disabled={isBulkPending}
                     />
+                  <ServiceIcon serviceName={sub.service_name} size={36} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold truncate">{sub.service_name}</p>
@@ -530,8 +532,13 @@ export function SubscriptionTable() {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium">{sub.service_name}</p>
-                      {sub.plan_name && <p className="text-xs text-muted-foreground">{sub.plan_name}</p>}
+                      <div className="flex items-center gap-2.5">
+                        <ServiceIcon serviceName={sub.service_name} size={32} />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{sub.service_name}</p>
+                          {sub.plan_name && <p className="text-xs text-muted-foreground truncate">{sub.plan_name}</p>}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
                       {sub.category ?? '—'}

@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS public.user_subscriptions (
     currency          VARCHAR(8)   NOT NULL DEFAULT 'JPY' CHECK (currency ~ '^[A-Z]{3}$'),
     billing_cycle     VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly', 'once')),
     next_billing_date DATE         NOT NULL,
+    trial_end_date    DATE,
     category          VARCHAR(64),
     payment_method    VARCHAR(128),
     status            VARCHAR(16)  NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled')),
@@ -81,11 +82,17 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_status
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_next_billing_date
     ON public.user_subscriptions (next_billing_date);
 
+-- Optional but cheap: accelerates "trial ending soon" lookups.
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_trial_end_date
+    ON public.user_subscriptions (user_id, trial_end_date)
+    WHERE trial_end_date IS NOT NULL;
+
 COMMENT ON TABLE  public.user_subscriptions                    IS 'Individual subscriptions owned by a Supabase auth user.';
 COMMENT ON COLUMN public.user_subscriptions.user_id            IS 'Owner (Supabase auth.users.id). RLS restricts access to this user.';
 COMMENT ON COLUMN public.user_subscriptions.status             IS 'Soft-deletion flag. "active" or "cancelled". We never DELETE rows.';
 COMMENT ON COLUMN public.user_subscriptions.billing_cycle      IS 'Either "monthly", "yearly", or "once". yearly values are divided by 12 in summary; once values contribute 0 to monthly totals.';
 COMMENT ON COLUMN public.user_subscriptions.next_billing_date  IS 'Next scheduled charge date.';
+COMMENT ON COLUMN public.user_subscriptions.trial_end_date     IS 'Optional free-trial end date. NULL for regular paid subscriptions.';
 
 -- Trigger: keep updated_at in sync on row update ------------------------------
 CREATE OR REPLACE FUNCTION public.set_updated_at()
