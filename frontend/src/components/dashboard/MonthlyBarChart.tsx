@@ -25,6 +25,22 @@ function shortJPY(v: number): string {
   return `${v}`
 }
 
+interface ChartTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number; payload: { month: string } }>
+}
+
+function ChartTooltip({ active, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+  const { value, payload: item } = payload[0]
+  return (
+    <div className="rounded-lg border bg-popover px-3 py-2 shadow-md">
+      <p className="text-xs text-muted-foreground">{item.month}</p>
+      <p className="text-sm font-semibold tabular-nums">{formatJPY(value)}</p>
+    </div>
+  )
+}
+
 export function MonthlyBarChart() {
   const { data, isLoading } = useSummary()
 
@@ -86,15 +102,8 @@ export function MonthlyBarChart() {
               domain={[0, maxAmount > 0 ? Math.ceil(maxAmount * 1.15) : 10000]}
             />
             <Tooltip
-              formatter={(value) => [formatJPY(Number(value)), '支出合計']}
-              cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
-              contentStyle={{
-                fontSize: '12px',
-                borderRadius: '8px',
-                border: '1px solid hsl(var(--border))',
-                background: 'hsl(var(--popover))',
-                color: 'hsl(var(--popover-foreground))',
-              }}
+              content={<ChartTooltip />}
+              cursor={{ fill: 'hsl(var(--foreground))', fillOpacity: 0.06, radius: 4 }}
             />
             <Bar
               dataKey="amount"
