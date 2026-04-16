@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: 'サブスク管理ダッシュボード',
   description: '契約中のサブスクリプションを一元管理します',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -45,9 +49,6 @@ export default function RootLayout({
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <link rel="apple-touch-icon" href="/icons/icon.svg" />
-      </head>
       <body className="min-h-full bg-background text-foreground">
         <script dangerouslySetInnerHTML={{ __html: `
   window.addEventListener('error', (e) => {

@@ -40,6 +40,7 @@ const schema = z.object({
   currency: z.string().min(1),
   billing_cycle: z.enum(['monthly', 'yearly']),
   next_billing_date: z.string().min(1, '次回請求日を入力してください'),
+  trial_end_date: z.string().optional(),
   category: z.string().optional(),
   payment_method: z.string().optional(),
   notes: z.string().optional(),
@@ -122,6 +123,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
           currency: editData.currency ?? 'JPY',
           billing_cycle: editData.billing_cycle as 'monthly' | 'yearly' ?? 'monthly',
           next_billing_date: editData.next_billing_date ?? '',
+          trial_end_date: editData.trial_end_date ?? '',
           category: editData.category ?? '',
           payment_method: editData.payment_method ?? '',
           notes: editData.notes ?? '',
@@ -171,6 +173,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
             currency: values.currency,
             billing_cycle: values.billing_cycle,
             next_billing_date: values.next_billing_date,
+            trial_end_date: values.trial_end_date || undefined,
             category: values.category || undefined,
             payment_method: values.payment_method || undefined,
             notes: values.notes || undefined,
@@ -186,6 +189,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
           currency: values.currency,
           billing_cycle: values.billing_cycle,
           next_billing_date: values.next_billing_date,
+          trial_end_date: values.trial_end_date || undefined,
           category: values.category || undefined,
           payment_method: values.payment_method || undefined,
           notes: values.notes || undefined,
@@ -408,6 +412,19 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
               {errors.next_billing_date && (
                 <p className="text-xs text-destructive">{errors.next_billing_date.message}</p>
               )}
+            </div>
+
+            {/* 無料トライアル終了日 */}
+            <div className="space-y-1">
+              <Label htmlFor="trial_end_date">無料トライアル終了日</Label>
+              <Input
+                id="trial_end_date"
+                type="date"
+                {...register('trial_end_date')}
+              />
+              <p className="text-xs text-muted-foreground">
+                無料期間がある場合のみ入力。終了の3日前に通知されます
+              </p>
             </div>
 
             {/* カテゴリ */}

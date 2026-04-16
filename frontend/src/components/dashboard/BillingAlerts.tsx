@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Bell, BellOff, X, AlertTriangle, Settings2 } from 'lucide-react'
+import { Bell, BellOff, X, AlertTriangle, Settings2, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
 import { formatDate, daysUntil, isExpense, EXPENSE_TAG } from '@/lib/utils'
@@ -9,6 +9,7 @@ import { STORAGE_KEYS } from '@/lib/constants'
 import type { SubscriptionDTO } from '@/lib/api-client'
 
 const DEFAULT_DAYS = 7
+const DEFAULT_TRIAL_WARN_DAYS = 3
 
 // iOS Safari (mobile) は Notification API 自体を公開していないため、
 // `Notification` というグローバル変数への素の参照は ReferenceError を
@@ -40,8 +41,10 @@ function fireBrowserNotification(subs: SubscriptionDTO[]) {
 export function BillingAlerts() {
   const { data: subs = [] } = useSubscriptions()
   const [dismissed, setDismissed] = useState(false)
+  const [dismissedTrial, setDismissedTrial] = useState(false)
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default')
   const [warnDays, setWarnDays] = useState(DEFAULT_DAYS)
+  const [trialWarnDays, setTrialWarnDays] = useState(DEFAULT_TRIAL_WARN_DAYS)
   const [editingDays, setEditingDays] = useState(false)
   const [daysInput, setDaysInput] = useState(String(DEFAULT_DAYS))
   const [notifSupported, setNotifSupported] = useState(false)
@@ -55,6 +58,8 @@ export function BillingAlerts() {
     if (supported) {
       setNotifPermission(Notification.permission)
     }
+    const tn = parseInt(localStorage.getItem(STORAGE_KEYS.TRIAL_ALERT_DAYS) ?? '', 10)
+    setTrialWarnDays(isNaN(tn) || tn < 1 ? DEFAULT_TRIAL_WARN_DAYS : tn)
   }, [])
 
   // subs / warnDays が変わったときだけ再計算する。useMemo を外すと、
@@ -75,6 +80,22 @@ export function BillingAlerts() {
             (daysUntil(a.next_billing_date) ?? 999) - (daysUntil(b.next_billing_date) ?? 999),
         ),
     [subs, warnDays],
+  )
+
+  const trialEnding = useMemo(
+    () =>
+      subs
+        .filter((s) => {
+          if (s.status !== 'active') return false
+          if (!s.trial_end_date) return false
+          const d = daysUntil(s.trial_end_date)
+          return d !== null && d >= 0 && d <= trialWarnDays
+        })
+        .sort(
+          (a, b) =>
+            (daysUntil(a.trial_end_date) ?? 999) - (daysUntil(b.trial_end_date) ?? 999),
+        ),
+    [subs, trialWarnDays],
   )
 
   // Fire browser notification once per session when there are upcoming bills
@@ -108,9 +129,13 @@ export function BillingAlerts() {
     setEditingDays(false)
   }
 
-  if (dismissed || (upcoming.length === 0 && !editingDays)) return null
+  if (dismissed && dismissedTrial && !editingDays) return null
+  if (upcoming.length === 0 && trialEnding.length === 0 && !editingDays) return null
 
   return (
+    <div className="space-y-2">
+    {/* ── 請求アラート ──────────────────────────────────────────────── */}
+    {(!dismissed && (upcoming.length > 0 || editingDays)) && (
     <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
       <div className="flex items-start gap-3 p-3 sm:p-4">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -197,6 +222,52 @@ export function BillingAlerts() {
           )}
         </div>
       </div>
+    </div>
+    )}
+
+    {/* ── トライアル終了アラート ──────────────────────────────────── */}
+    {!dismissedTrial && trialEnding.length > 0 && (
+    <div className="rounded-lg border border-violet-200 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/30">
+      <div className="flex items-start gap-3 p-3 sm:p-4">
+        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-violet-800 dark:text-violet-300">
+              無料トライアル終了間近（{trialEnding.length}件）
+            </p>
+            <Button
+              variant="ghost" size="icon"
+              className="h-7 w-7 text-violet-700 hover:text-violet-900 dark:text-violet-400"
+              onClick={() => setDismissedTrial(true)}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <ul className="space-y-1">
+            {trialEnding.map((s) => {
+              const days = daysUntil(s.trial_end_date)
+              const isToday = days === 0
+              return (
+                <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="truncate font-medium text-violet-900 dark:text-violet-200">
+                    {s.service_name}
+                  </span>
+                  <span className={`shrink-0 text-xs ${
+                    isToday ? 'font-semibold text-orange-600 dark:text-orange-400'
+                    : 'text-violet-700 dark:text-violet-400'
+                  }`}>
+                    {formatDate(s.trial_end_date)}
+                    {isToday && ' (本日終了)'}
+                    {!isToday && days !== null && ` (${days}日後に終了)`}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+    )}
     </div>
   )
 }

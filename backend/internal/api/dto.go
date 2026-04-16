@@ -24,6 +24,7 @@ type SubscriptionDTO struct {
 	Currency        string  `json:"currency"           example:"JPY"`
 	BillingCycle    string  `json:"billing_cycle"      example:"monthly" enums:"monthly,yearly"`
 	NextBillingDate string  `json:"next_billing_date"  example:"2026-05-01"`
+	TrialEndDate    *string `json:"trial_end_date"     example:"2026-05-31"`
 	Category        *string `json:"category"           example:"Entertainment"`
 	PaymentMethod   *string `json:"payment_method"     example:"Visa ****1234"`
 	Notes           *string `json:"notes"              example:"家族プラン"`
@@ -51,6 +52,7 @@ type CreateSubscriptionRequest struct {
 	Currency        string  `json:"currency"           example:"JPY"`
 	BillingCycle    string  `json:"billing_cycle"      example:"monthly" enums:"monthly,yearly"`
 	NextBillingDate string  `json:"next_billing_date"  example:"2026-05-01"`
+	TrialEndDate    *string `json:"trial_end_date"     example:"2026-05-31"`
 	Category        *string `json:"category"           example:"Entertainment"`
 	PaymentMethod   *string `json:"payment_method"     example:"Visa ****1234"`
 	Notes           *string `json:"notes"              example:"家族プラン"`
@@ -66,6 +68,7 @@ type UpdateSubscriptionRequest struct {
 	Currency        string  `json:"currency"           example:"JPY"`
 	BillingCycle    string  `json:"billing_cycle"      example:"monthly" enums:"monthly,yearly"`
 	NextBillingDate string  `json:"next_billing_date"  example:"2026-05-01"`
+	TrialEndDate    *string `json:"trial_end_date"     example:"2026-05-31"`
 	Category        *string `json:"category"           example:"Entertainment"`
 	PaymentMethod   *string `json:"payment_method"     example:"Visa ****1234"`
 	Notes           *string `json:"notes"              example:"家族プラン"`

@@ -29,6 +29,7 @@ func toSubscriptionDTO(row repository.UserSubscription, conv *money.Converter) (
 		Currency:        row.Currency,
 		BillingCycle:    row.BillingCycle,
 		NextBillingDate: row.NextBillingDate.Format(dateLayout),
+		TrialEndDate:    pgDatePtr(row.TrialEndDate),
 		Category:        pgTextPtr(row.Category),
 		PaymentMethod:   pgTextPtr(row.PaymentMethod),
 		Notes:           pgTextPtr(row.Notes),
@@ -97,6 +98,27 @@ func pgTextFromPtr(s *string) pgtype.Text {
 		return pgtype.Text{Valid: false}
 	}
 	return pgtype.Text{String: *s, Valid: true}
+}
+
+// pgDatePtr converts pgtype.Date into *string (YYYY-MM-DD). NULL maps to nil.
+func pgDatePtr(d pgtype.Date) *string {
+	if !d.Valid {
+		return nil
+	}
+	s := d.Time.Format(dateLayout)
+	return &s
+}
+
+// pgDateFromPtr is the inverse: *string (YYYY-MM-DD or nil) → pgtype.Date.
+func pgDateFromPtr(s *string) pgtype.Date {
+	if s == nil {
+		return pgtype.Date{Valid: false}
+	}
+	t, err := time.Parse(dateLayout, *s)
+	if err != nil {
+		return pgtype.Date{Valid: false}
+	}
+	return pgtype.Date{Time: t, Valid: true}
 }
 
 // parseDate validates and parses a YYYY-MM-DD string.

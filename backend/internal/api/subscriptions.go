@@ -82,6 +82,11 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateTrialEndDate(req.TrialEndDate); err != nil {
+		httpx.BadRequest(w, err.Error())
+		return
+	}
+
 	nextDate, _ := parseDate(common.NextBillingDate) // already validated
 
 	params := repository.CreateUserSubscriptionParams{
@@ -92,6 +97,7 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 		Currency:        common.Currency,
 		BillingCycle:    common.BillingCycle,
 		NextBillingDate: nextDate,
+		TrialEndDate:    pgDateFromPtr(req.TrialEndDate),
 		Category:        pgTextFromPtr(req.Category),
 		PaymentMethod:   pgTextFromPtr(req.PaymentMethod),
 		Notes:           pgTextFromPtr(req.Notes),
@@ -158,6 +164,11 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateTrialEndDate(req.TrialEndDate); err != nil {
+		httpx.BadRequest(w, err.Error())
+		return
+	}
+
 	status, err := validateStatus(req.Status)
 	if err != nil {
 		httpx.BadRequest(w, err.Error())
@@ -175,6 +186,7 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 		Currency:        common.Currency,
 		BillingCycle:    common.BillingCycle,
 		NextBillingDate: nextDate,
+		TrialEndDate:    pgDateFromPtr(req.TrialEndDate),
 		Category:        pgTextFromPtr(req.Category),
 		PaymentMethod:   pgTextFromPtr(req.PaymentMethod),
 		Notes:           pgTextFromPtr(req.Notes),
