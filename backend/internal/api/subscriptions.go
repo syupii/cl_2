@@ -214,13 +214,16 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 
 // DeleteSubscription godoc
 //
-// @Summary      Permanently delete a subscription
+// @Summary      Cancel a subscription (soft-delete)
+// @Description  Flips status to "cancelled". Rows are retained for audit/history;
+// @Description  this endpoint never removes data physically.
 // @Tags         subscriptions
 // @Security     BearerAuth
 // @Param        id   path      string  true  "subscription id (UUID)"
 // @Success      204  {object}  httpx.Response
 // @Failure      400  {object}  httpx.Response
 // @Failure      401  {object}  httpx.Response
+// @Failure      404  {object}  httpx.Response
 // @Failure      500  {object}  httpx.Response
 // @Router       /subscriptions/{id} [delete]
 func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
@@ -233,9 +236,13 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.repo.DeleteUserSubscription(r.Context(), repository.DeleteUserSubscriptionParams{
+	if _, err := h.repo.CancelUserSubscription(r.Context(), repository.CancelUserSubscriptionParams{
 		ID: id, UserID: userID,
 	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httpx.NotFound(w, "subscription not found")
+			return
+		}
 		httpx.Internal(w, err)
 		return
 	}

@@ -2,17 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { STORAGE_KEYS } from '@/lib/constants'
+import { loadStringList } from '@/lib/localStorage'
 
 export function useCategories() {
   const [categories, setCategories] = useState<string[]>([])
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PREDEFINED_CATEGORIES)
-      if (saved) setCategories(JSON.parse(saved) as string[])
-    } catch {
-      // ignore parse errors
-    }
+    const list = loadStringList(STORAGE_KEYS.PREDEFINED_CATEGORIES)
+    if (list.length > 0) setCategories(list)
   }, [])
 
   const persist = useCallback((next: string[]) => {

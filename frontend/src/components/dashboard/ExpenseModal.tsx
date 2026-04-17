@@ -25,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useCreateSubscription, useUpdateSubscription } from '@/hooks/useSubscriptions'
 import { STORAGE_KEYS } from '@/lib/constants'
+import { loadStringList } from '@/lib/localStorage'
 import { EXPENSE_TAG } from '@/lib/utils'
 import type { SubscriptionDTO } from '@/lib/api-client'
 
@@ -95,14 +96,9 @@ export function ExpenseModal({ open, onOpenChange, editData }: Props) {
   const [allCategories, setAllCategories] = useState<string[]>(PRESET_CATEGORIES)
   useEffect(() => {
     if (!open) return
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PREDEFINED_CATEGORIES)
-      const custom = saved ? (JSON.parse(saved) as string[]) : []
-      const merged = [...new Set([...PRESET_CATEGORIES, ...custom])].sort()
-      setAllCategories(merged)
-    } catch {
-      setAllCategories(PRESET_CATEGORIES)
-    }
+    const custom = loadStringList(STORAGE_KEYS.PREDEFINED_CATEGORIES)
+    const merged = [...new Set([...PRESET_CATEGORIES, ...custom])].sort()
+    setAllCategories(merged)
   }, [open])
 
   const currentCategory = watch('category')
