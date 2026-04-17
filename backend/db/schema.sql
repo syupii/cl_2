@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.service_plans (
     id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     template_id    UUID        NOT NULL REFERENCES public.service_templates(id) ON DELETE CASCADE,
     plan_name      VARCHAR(255) NOT NULL,
-    default_price  NUMERIC(18, 2) NOT NULL CHECK (default_price >= 0),
+    default_price  NUMERIC(12, 2) NOT NULL CHECK (default_price >= 0),
     billing_cycle  VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly', 'once')),
     currency       VARCHAR(8)   NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.user_subscriptions (
     user_id           UUID         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     service_name      VARCHAR(255) NOT NULL,
     plan_name         VARCHAR(255),
-    price             NUMERIC(18, 2) NOT NULL CHECK (price >= 0),
+    price             NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
     currency          VARCHAR(8)   NOT NULL DEFAULT 'JPY' CHECK (currency ~ '^[A-Z]{3}$'),
     billing_cycle     VARCHAR(16)  NOT NULL CHECK (billing_cycle IN ('monthly', 'yearly', 'once')),
     next_billing_date DATE         NOT NULL,
@@ -171,14 +171,3 @@ CREATE POLICY user_subscriptions_update_own
 -- NOTE: We deliberately do NOT define a DELETE policy.
 -- REQUIREMENTS.md section 3.B mandates soft-deletion via status='cancelled',
 -- so there is no legitimate path for a user to hard-delete a subscription row.
-
--- =============================================================================
--- Idempotent migrations : widen NUMERIC(12,2) price columns to NUMERIC(18,2)
--- so high-priced services (>= 10,000,000,000) can be stored. PostgreSQL ALTER
--- of NUMERIC precision is an instant no-rewrite change because the existing
--- precision is a strict subset of the new one.
--- =============================================================================
-ALTER TABLE public.service_plans
-    ALTER COLUMN default_price TYPE NUMERIC(18, 2);
-ALTER TABLE public.user_subscriptions
-    ALTER COLUMN price TYPE NUMERIC(18, 2);

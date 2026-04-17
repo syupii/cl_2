@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -23,20 +22,7 @@ type RouterConfig struct {
 
 // NewRouter assembles the chi router with middleware, /healthz, Swagger UI,
 // and the authenticated /api/v1 routes.
-//
-// AllowedOrigins must be non-empty and must not contain "*" — the latter is a
-// CORS spec violation when combined with AllowCredentials=true (browsers
-// reject it) and is the single most common "prod leak" misconfiguration.
-func NewRouter(cfg RouterConfig) (http.Handler, error) {
-	if len(cfg.AllowedOrigins) == 0 {
-		return nil, errors.New("api: AllowedOrigins must not be empty")
-	}
-	for _, origin := range cfg.AllowedOrigins {
-		if origin == "*" {
-			return nil, errors.New(`api: AllowedOrigins cannot contain "*" while AllowCredentials=true`)
-		}
-	}
-
+func NewRouter(cfg RouterConfig) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -100,7 +86,7 @@ func NewRouter(cfg RouterConfig) (http.Handler, error) {
 		r.Delete("/payment-methods/{id}", cfg.Handler.DeletePaymentMethod)
 	})
 
-	return r, nil
+	return r
 }
 
 // healthz is the unauthenticated liveness probe served at /healthz.
