@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"strings"
@@ -124,10 +125,19 @@ func NewVerifier(secret, issuer, audience string) (*Verifier, error) {
 		Audience: strings.TrimSpace(audience),
 	}
 
-	// Attempt ES256 key fetch from JWKS (non-fatal).
+	// Attempt ES256 key fetch from JWKS. JWKS outage is non-fatal so HS256
+	// (legacy) projects keep working, but failures are logged loudly so ops
+	// can tell whether an ES256-only project is silently running in HS256
+	// fallback mode.
 	if v.Issuer != "" {
 		jwksURL := strings.TrimRight(v.Issuer, "/") + "/.well-known/jwks.json"
-		if key, err := fetchECKey(jwksURL); err == nil && key != nil {
+		key, err := fetchECKey(jwksURL)
+		switch {
+		case err != nil:
+			log.Printf("auth: JWKS fetch failed (HS256-only mode): %v", err)
+		case key == nil:
+			log.Printf("auth: JWKS at %s has no EC P-256 key (HS256-only mode)", jwksURL)
+		default:
 			v.ECKey = key
 		}
 	}

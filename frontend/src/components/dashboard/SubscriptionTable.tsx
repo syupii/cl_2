@@ -28,6 +28,17 @@ type TabValue = 'active' | 'cancelled' | 'all'
 type SortKey = 'service_name' | 'monthly_cost_jpy' | 'next_billing_date'
 type SortDir = 'asc' | 'desc'
 
+// encodeCSVCell RFC 4180-encodes a single cell and defuses spreadsheet formula
+// injection by prefixing a single quote when the cell starts with a character
+// that Excel/Sheets/Numbers treats as a formula trigger.
+function encodeCSVCell(value: unknown): string {
+  let s = String(value ?? '')
+  if (s.length > 0 && '=+-@\t\r'.includes(s[0])) {
+    s = "'" + s
+  }
+  return `"${s.replace(/"/g, '""')}"`
+}
+
 export function SubscriptionTable() {
   const { data: subscriptions = [], isLoading } = useSubscriptions()
   const updateMutation = useUpdateSubscription()
@@ -161,8 +172,8 @@ export function SubscriptionTable() {
       sub.monthly_cost_jpy ?? '',
     ])
     const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n')
+      .map((row) => row.map(encodeCSVCell).join(','))
+      .join('\r\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')

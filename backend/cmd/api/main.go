@@ -79,11 +79,14 @@ func run() error {
 	}
 
 	handler := api.NewHandler(repo, conv, cfg.AdminEmail)
-	router := api.NewRouter(api.RouterConfig{
+	router, err := api.NewRouter(api.RouterConfig{
 		Handler:        handler,
 		JWTVerifier:    verifier,
 		AllowedOrigins: cfg.AllowedOrigins,
 	})
+	if err != nil {
+		return err
+	}
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
