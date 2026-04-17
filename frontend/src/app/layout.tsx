@@ -51,16 +51,28 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground">
         <script dangerouslySetInnerHTML={{ __html: `
-  window.addEventListener('error', (e) => {
-    document.body.innerHTML = '<pre style="padding:1rem;white-space:pre-wrap;font-size:12px">' 
-      + 'ERROR: ' + e.message + '\\nat ' + (e.filename||'?') + ':' + e.lineno
-      + '\\n\\nUA: ' + navigator.userAgent + '</pre>'
-  })
-  window.addEventListener('unhandledrejection', (e) => {
-    document.body.innerHTML = '<pre style="padding:1rem;white-space:pre-wrap;font-size:12px">' 
-      + 'UNHANDLED REJECTION: ' + (e.reason && e.reason.message || e.reason)
-      + '\\n\\nUA: ' + navigator.userAgent + '</pre>'
-  })
+  function __renderFatal(text) {
+    var pre = document.createElement('pre');
+    pre.style.padding = '1rem';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.fontSize = '12px';
+    pre.textContent = text;
+    document.body.replaceChildren(pre);
+  }
+  window.addEventListener('error', function (e) {
+    __renderFatal(
+      'ERROR: ' + e.message +
+      '\\nat ' + (e.filename || '?') + ':' + e.lineno +
+      '\\n\\nUA: ' + navigator.userAgent
+    );
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var reason = (e.reason && e.reason.message) || e.reason;
+    __renderFatal(
+      'UNHANDLED REJECTION: ' + reason +
+      '\\n\\nUA: ' + navigator.userAgent
+    );
+  });
 `}} />
 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

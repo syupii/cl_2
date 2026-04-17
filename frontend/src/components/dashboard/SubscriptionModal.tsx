@@ -29,6 +29,7 @@ import { useCreateSubscription, useUpdateSubscription, useSubscriptions } from '
 import { useTemplates } from '@/hooks/useTemplates'
 import { usePaymentMethods } from '@/hooks/usePaymentMethods'
 import { STORAGE_KEYS } from '@/lib/constants'
+import { loadStringList } from '@/lib/localStorage'
 import type { SubscriptionDTO, PlanDTO, TemplateDTO } from '@/lib/api-client'
 
 // ── Zod schema ─────────────────────────────────────────────────────────────
@@ -84,12 +85,7 @@ export function SubscriptionModal({ open, onOpenChange, editData }: Props) {
   const [predefinedCategories, setPredefinedCategories] = useState<string[]>([])
   useEffect(() => {
     if (!open) return
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PREDEFINED_CATEGORIES)
-      setPredefinedCategories(saved ? (JSON.parse(saved) as string[]) : [])
-    } catch {
-      setPredefinedCategories([])
-    }
+    setPredefinedCategories(loadStringList(STORAGE_KEYS.PREDEFINED_CATEGORIES))
   }, [open])
 
   // DB登録済み + 過去入力履歴をマージして候補リストを生成
