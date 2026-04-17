@@ -44,7 +44,7 @@ export function NotificationPanel() {
   const billingNotifications = subs
     .filter((s) => s.status === 'active' && !isExpense(s))
     .map((s) => ({ sub: s, days: daysUntil(s.next_billing_date), type: 'billing' as const }))
-    .filter(({ days }) => days !== null && days <= warnDays)
+    .filter(({ days }) => days !== null && days >= 0 && days <= warnDays)
 
   // Trial ending notifications
   const trialNotifications = subs

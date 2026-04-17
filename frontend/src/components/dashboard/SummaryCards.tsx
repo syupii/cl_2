@@ -55,7 +55,7 @@ export function SummaryCards() {
 
       if (isExpense(s)) {
         if (isOnceExpense(s)) {
-          total += parseInt(s.price ?? '0', 10)
+          if (isBillingThisMonth(s)) total += parseInt(s.price ?? '0', 10)
         } else if (s.billing_cycle === 'yearly') {
           if (isBillingThisMonth(s)) total += parseInt(s.price ?? '0', 10)
         } else {

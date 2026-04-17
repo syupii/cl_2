@@ -73,7 +73,7 @@ export function BillingAlerts() {
           if (s.status !== 'active') return false
           if (isExpense(s)) return false
           const d = daysUntil(s.next_billing_date)
-          return d !== null && d <= warnDays
+          return d !== null && d >= 0 && d <= warnDays
         })
         .sort(
           (a, b) =>
