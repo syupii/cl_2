@@ -1,0 +1,43 @@
+# Fly.io deployment config for the Go backend.
+# Reuses the repo-root Dockerfile (build context = repo root).
+#
+# First-time setup (run locally with flyctl installed):
+#   fly auth login
+#   fly apps create substck-api          # or pick your own name
+#   fly secrets set \
+#     DATABASE_URL="..." \
+#     SUPABASE_JWT_SECRET="..." \
+#     SUPABASE_JWT_ISSUER="https://<project>.supabase.co/auth/v1" \
+#     ADMIN_EMAIL="..." \
+#     ALLOWED_ORIGINS="https://substck.jp,https://www.substck.jp"
+#   fly deploy
+#
+# Then set Vercel env NEXT_PUBLIC_API_BASE_URL to:
+#   https://<app-name>.fly.dev/api/v1
+
+app = "substck-api"
+primary_region = "nrt"  # Tokyo; change if you prefer another region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
